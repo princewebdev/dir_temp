@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="The Forex Industry Directory - Compare brokers, technology providers, and services trusted by the trading industry">
+  <title>The Forex Industry Directory | Compare Brokers & Services</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <!-- Hero Section -->
+  <header class="hero">
+    <div class="container">
+      <!-- Trust Badge -->
+      <div class="hero__badge">
+        <svg class="hero__badge-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+        </svg>
+        <span>Trusted by 10,000+ traders worldwide</span>
+      </div>
+      
+      <!-- Title -->
+      <h1 class="hero__title">The Forex Industry Directory</h1>
+      <p class="hero__subtitle">Compare brokers, technology providers, and services trusted by the trading industry</p>
+      
+      <!-- Search Bar -->
+      <div class="search-bar">
+        <div class="search-bar__input-wrapper">
+          <svg class="search-bar__icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="m21 21-4.35-4.35"/>
+          </svg>
+          <input type="text" class="search-bar__input" placeholder="Search brokers, providers, services...">
+        </div>
+        <select class="search-bar__select" aria-label="Category">
+          <option value="">All Categories</option>
+          <option value="brokers">Brokers</option>
+          <option value="technology">Technology</option>
+          <option value="services">Services</option>
+        </select>
+        <select class="search-bar__select" aria-label="Location">
+          <option value="">Location</option>
+          <option value="uk">United Kingdom</option>
+          <option value="europe">Europe</option>
+          <option value="australia">Australia</option>
+          <option value="usa">United States</option>
+          <option value="asia">Asia Pacific</option>
+        </select>
+        <button class="search-bar__button" aria-label="Search">
+          <svg width="20" height="20" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="m21 21-4.35-4.35"/>
+          </svg>
+        </button>
+      </div>
+      
+      <!-- Stats -->
+      <div class="stats">
+        <div class="stats__item">
+          <svg class="stats__icon stats__icon--brokers" width="20" height="20" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/>
+          </svg>
+          <span>150+ Brokers</span>
+        </div>
+        <div class="stats__item">
+          <svg class="stats__icon stats__icon--tech" width="20" height="20" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/>
+          </svg>
+          <span>80+ Tech Providers</span>
+        </div>
+        <div class="stats__item">
+          <svg class="stats__icon stats__icon--services" width="20" height="20" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+          </svg>
+          <span>80+ Service Companies</span>
+        </div>
+      </div>
+    </div>
+  </header>
+  
+  <!-- Tabs -->
+  <nav class="tabs" aria-label="Directory categories">
+    <ul class="tabs__list">
+      <li class="tabs__item active" data-tab="brokers" role="tab" aria-selected="true">
+        <svg class="tabs__icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/>
+        </svg>
+        <span>Brokers</span>
+      </li>
+      <li class="tabs__item" data-tab="services" role="tab" aria-selected="false">
+        <svg class="tabs__icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+        </svg>
+        <span>Services</span>
+      </li>
+      <li class="tabs__item" data-tab="technology" role="tab" aria-selected="false">
+        <svg class="tabs__icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/>
+        </svg>
+        <span>Tech</span>
+      </li>
+    </ul>
+  </nav>
+  
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Sidebar Filters -->
+    <aside class="sidebar">
+      <div class="filters">
+        <div class="filters__header">
+          <h2 class="filters__title">Filters</h2>
+          <button class="filters__clear">Clear All</button>
+        </div>
+        
+        <!-- Directory Filter -->
+        <div class="filter-section">
+          <div class="filter-section__header">
+            <h3 class="filter-section__title">Directory</h3>
+            <svg class="filter-section__toggle" width="16" height="16" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path d="m6 9 6 6 6-6"/>
+            </svg>
+          </div>
+          <div class="filter-section__content">
+            <label class="filter-option" data-filter-type="directory" data-filter-value="brokers">
+              <span class="filter-option__checkbox checked"></span>
+              <span class="filter-option__label">Brokers</span>
+              <span class="filter-option__count">150</span>
+            </label>
+            <label class="filter-option" data-filter-type="directory" data-filter-value="technology">
+              <span class="filter-option__checkbox"></span>
+              <span class="filter-option__label">Technology</span>
+              <span class="filter-option__count">80</span>
+            </label>
+            <label class="filter-option" data-filter-type="directory" data-filter-value="services">
+              <span class="filter-option__checkbox"></span>
+              <span class="filter-option__label">Services</span>
+              <span class="filter-option__count">74</span>
+            </label>
+          </div>
+        </div>
+        
+        <!-- Regulation Filter -->
+        <div class="filter-section">
+          <div class="filter-section__header">
+            <h3 class="filter-section__title">Regulation</h3>
+            <svg class="filter-section__toggle" width="16" height="16" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path d="m6 9 6 6 6-6"/>
+            </svg>
+          </div>
+          <div class="filter-section__content">
+            <label class="filter-option" data-filter-type="regulation" data-filter-value="FCA">
+              <span class="filter-option__checkbox checked"></span>
+              <span class="filter-option__label">FCA</span>
+            </label>
+            <label class="filter-option" data-filter-type="regulation" data-filter-value="CySEC">
+              <span class="filter-option__checkbox"></span>
+              <span class="filter-option__label">CySEC</span>
+            </label>
+            <label class="filter-option" data-filter-type="regulation" data-filter-value="ASIC">
+              <span class="filter-option__checkbox"></span>
+              <span class="filter-option__label">ASIC</span>
+            </label>
+            <label class="filter-option" data-filter-type="regulation" data-filter-value="BaFin">
+              <span class="filter-option__checkbox"></span>
+              <span class="filter-option__label">BaFin</span>
+            </label>
+            <label class="filter-option" data-filter-type="regulation" data-filter-value="FSCA">
+              <span class="filter-option__checkbox"></span>
+              <span class="filter-option__label">FSCA</span>
+            </label>
+          </div>
+        </div>
+        
+        <!-- Trading Platforms Filter -->
+        <div class="filter-section">
+          <div class="filter-section__header">
+            <h3 class="filter-section__title">Trading Platforms</h3>
+            <svg class="filter-section__toggle" width="16" height="16" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path d="m6 9 6 6 6-6"/>
+            </svg>
+          </div>
+          <div class="filter-section__content">
+            <label class="filter-option" data-filter-type="platforms" data-filter-value="MT4">
+              <span class="filter-option__checkbox checked"></span>
+              <span class="filter-option__label">MT4</span>
+            </label>
+            <label class="filter-option" data-filter-type="platforms" data-filter-value="MT5">
+              <span class="filter-option__checkbox"></span>
+              <span class="filter-option__label">MT5</span>
+            </label>
+            <label class="filter-option" data-filter-type="platforms" data-filter-value="cTrader">
+              <span class="filter-option__checkbox"></span>
+              <span class="filter-option__label">cTrader</span>
+            </label>
+            <label class="filter-option" data-filter-type="platforms" data-filter-value="TradingView">
+              <span class="filter-option__checkbox"></span>
+              <span class="filter-option__label">TradingView</span>
+            </label>
+          </div>
+        </div>
+        
+        <!-- Min Deposit Filter -->
+        <div class="filter-section">
+          <div class="filter-section__header">
+            <h3 class="filter-section__title">Min Deposit</h3>
+            <svg class="filter-section__toggle" width="16" height="16" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path d="m6 9 6 6 6-6"/>
+            </svg>
+          </div>
+          <div class="filter-section__content">
+            <div class="range-slider">
+              <div class="range-slider__track">
+                <div class="range-slider__fill" style="left: 0%; width: 100%;"></div>
+                <div class="range-slider__thumb" style="left: 0%;"></div>
+                <div class="range-slider__thumb" style="left: 100%;"></div>
+              </div>
+              <div class="range-slider__values">
+                <span>$0</span>
+                <span>$10,000</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Spreads From Filter -->
+        <div class="filter-section">
+          <div class="filter-section__header">
+            <h3 class="filter-section__title">Spreads From</h3>
+            <svg class="filter-section__toggle" width="16" height="16" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path d="m6 9 6 6 6-6"/>
+            </svg>
+          </div>
+          <div class="filter-section__content">
+            <label class="filter-option" data-filter-type="spreads" data-filter-value="0.0">
+              <span class="filter-option__checkbox checked"></span>
+              <span class="filter-option__label">0.0 pips (Raw)</span>
+            </label>
+            <label class="filter-option" data-filter-type="spreads" data-filter-value="0.4">
+              <span class="filter-option__checkbox"></span>
+              <span class="filter-option__label">0.4 pips</span>
+            </label>
+            <label class="filter-option" data-filter-type="spreads" data-filter-value="0.8">
+              <span class="filter-option__checkbox"></span>
+              <span class="filter-option__label">0.8 pips</span>
+            </label>
+            <label class="filter-option" data-filter-type="spreads" data-filter-value="1.0">
+              <span class="filter-option__checkbox"></span>
+              <span class="filter-option__label">1.0 pips</span>
+            </label>
+            <label class="filter-option" data-filter-type="spreads" data-filter-value="1.5+">
+              <span class="filter-option__checkbox"></span>
+              <span class="filter-option__label">1.5+ pips</span>
+            </label>
+          </div>
+        </div>
+        
+        <!-- Account Type Filter -->
+        <div class="filter-section">
+          <div class="filter-section__header">
+            <h3 class="filter-section__title">Account Type</h3>
+            <svg class="filter-section__toggle" width="16" height="16" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path d="m6 9 6 6 6-6"/>
+            </svg>
+          </div>
+          <div class="filter-section__content">
+            <label class="filter-option" data-filter-type="accountType" data-filter-value="standard">
+              <span class="filter-option__checkbox"></span>
+              <span class="filter-option__label">Standard</span>
+            </label>
+            <label class="filter-option" data-filter-type="accountType" data-filter-value="ecn">
+              <span class="filter-option__checkbox"></span>
+              <span class="filter-option__label">ECN / Raw</span>
+            </label>
+            <label class="filter-option" data-filter-type="accountType" data-filter-value="islamic">
+              <span class="filter-option__checkbox"></span>
+              <span class="filter-option__label">Islamic</span>
+            </label>
+            <label class="filter-option" data-filter-type="accountType" data-filter-value="demo">
+              <span class="filter-option__checkbox"></span>
+              <span class="filter-option__label">Demo</span>
+            </label>
+          </div>
+        </div>
+        
+        <!-- Minimum Rating Filter -->
+        <div class="filter-section">
+          <div class="filter-section__header">
+            <h3 class="filter-section__title">Minimum Rating</h3>
+            <svg class="filter-section__toggle" width="16" height="16" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path d="m6 9 6 6 6-6"/>
+            </svg>
+          </div>
+          <div class="filter-section__content rating-options">
+            <label class="rating-option" data-rating="5">
+              <span class="rating-option__radio"></span>
+              <span class="rating-option__stars">
+                <span class="rating-option__star">★</span>
+                <span class="rating-option__star">★</span>
+                <span class="rating-option__star">★</span>
+                <span class="rating-option__star">★</span>
+                <span class="rating-option__star">★</span>
+              </span>
+              <span class="rating-option__label">& up</span>
+            </label>
+            <label class="rating-option" data-rating="4">
+              <span class="rating-option__radio"></span>
+              <span class="rating-option__stars">
+                <span class="rating-option__star">★</span>
+                <span class="rating-option__star">★</span>
+                <span class="rating-option__star">★</span>
+                <span class="rating-option__star">★</span>
+                <span class="rating-option__star empty">☆</span>
+              </span>
+              <span class="rating-option__label">& up</span>
+            </label>
+            <label class="rating-option" data-rating="3">
+              <span class="rating-option__radio checked"></span>
+              <span class="rating-option__stars">
+                <span class="rating-option__star">★</span>
+                <span class="rating-option__star">★</span>
+                <span class="rating-option__star">★</span>
+                <span class="rating-option__star empty">☆</span>
+                <span class="rating-option__star empty">☆</span>
+              </span>
+              <span class="rating-option__label">& up</span>
+            </label>
+          </div>
+        </div>
+        
+        <!-- Location Filter -->
+        <div class="filter-section">
+          <div class="filter-section__header">
+            <h3 class="filter-section__title">Location</h3>
+            <svg class="filter-section__toggle" width="16" height="16" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path d="m6 9 6 6 6-6"/>
+            </svg>
+          </div>
+          <div class="filter-section__content">
+            <div class="search-location" style="margin-bottom: 0.5rem;">
+              <input type="text" placeholder="Search location..." style="width: 100%; padding: 0.5rem; border: 1px solid #e5e7eb; border-radius: 0.375rem; font-size: 0.875rem;">
+            </div>
+            <label class="filter-option" data-filter-type="location" data-filter-value="uk">
+              <span class="filter-option__checkbox checked"></span>
+              <span class="filter-option__label">United Kingdom</span>
+            </label>
+            <label class="filter-option" data-filter-type="location" data-filter-value="europe">
+              <span class="filter-option__checkbox"></span>
+              <span class="filter-option__label">Europe</span>
+            </label>
+            <label class="filter-option" data-filter-type="location" data-filter-value="australia">
+              <span class="filter-option__checkbox"></span>
+              <span class="filter-option__label">Australia</span>
+            </label>
+            <label class="filter-option" data-filter-type="location" data-filter-value="usa">
+              <span class="filter-option__checkbox"></span>
+              <span class="filter-option__label">United States</span>
+            </label>
+            <label class="filter-option" data-filter-type="location" data-filter-value="asia">
+              <span class="filter-option__checkbox"></span>
+              <span class="filter-option__label">Asia Pacific</span>
+            </label>
+          </div>
+        </div>
+        
+        <!-- Search Radius -->
+        <div class="filter-section">
+          <div class="filter-section__header">
+            <h3 class="filter-section__title">Search Radius</h3>
+            <span style="font-size: 0.75rem; color: #dc2626;">50 mi</span>
+          </div>
+          <div class="filter-section__content">
+            <div class="range-slider">
+              <div class="range-slider__track">
+                <div class="range-slider__fill" style="left: 0%; width: 50%;"></div>
+                <div class="range-slider__thumb" style="left: 50%;"></div>
+              </div>
+              <div class="range-slider__values">
+                <span>0 mi</span>
+                <span>100 mi</span>
+              </div>
+            </div>
+            <label class="filter-option" style="margin-top: 0.5rem;">
+              <span class="filter-option__checkbox"></span>
+              <span class="filter-option__label">Use My Location</span>
+            </label>
+          </div>
+        </div>
+        
+        <!-- Verified Only Toggle -->
+        <div class="toggle-wrapper">
+          <span class="toggle-label">Verified Only</span>
+          <div class="toggle active" data-filter-type="verifiedOnly">
+            <div class="toggle__knob"></div>
+          </div>
+        </div>
+        
+        <!-- Apply Filters Button -->
+        <button class="filters__apply">Apply Filters</button>
+      </div>
+    </aside>
+    
+    <!-- Results Area -->
+    <section class="results">
+      <div class="results__header">
+        <p class="results__count">Showing <strong>24</strong> of <strong>150</strong> Results</p>
+        <div class="results__controls">
+          <!-- Mobile Filters Button -->
+          <button class="results__filters-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+            </svg>
+            <span>Filters</span>
+          </button>
+          
+          <!-- View Toggle -->
+          <div class="results__view-toggle">
+            <button class="results__view-btn active" data-view="grid" aria-label="Grid view">
+              <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/>
+              </svg>
+            </button>
+            <button class="results__view-btn" data-view="list" aria-label="List view">
+              <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+          
+          <!-- Sort -->
+          <div class="results__sort">
+            <span class="results__sort-label">Sort:</span>
+            <select class="results__sort-select">
+              <option value="rating-high">Rating (High-Low)</option>
+              <option value="rating-low">Rating (Low-High)</option>
+              <option value="name-asc">Name (A-Z)</option>
+              <option value="name-desc">Name (Z-A)</option>
+              <option value="reviews">Most Reviews</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Cards Grid -->
+      <div class="cards-grid">
+        <!-- Card 1: IG Group -->
+        <article class="card">
+          <div class="card__header">
+            <div class="card__logo">IG</div>
+            <button class="card__bookmark" aria-label="Bookmark">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+              </svg>
+            </button>
+          </div>
+          <h3 class="card__name">IG Group</h3>
+          <div class="card__rating">
+            <div class="card__stars">
+              <span class="card__star">★</span>
+              <span class="card__star">★</span>
+              <span class="card__star">★</span>
+              <span class="card__star">★</span>
+              <span class="card__star empty">☆</span>
+            </div>
+            <span class="card__reviews">(38 reviews)</span>
+          </div>
+          <div class="card__meta">
+            <span class="card__type">Forex Broker</span>
+            <span class="card__meta-separator">·</span>
+            <span class="card__location">
+              <svg width="14" height="14" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+              </svg>
+              UK
+            </span>
+          </div>
+          <div class="card__badges">
+            <span class="badge badge--fca">FCA</span>
+            <span class="badge badge--asic">ASIC</span>
+            <span class="badge badge--mt4">MT4</span>
+            <span class="badge badge--ctrader">cTrader</span>
+          </div>
+          <div class="card__details">
+            <div class="card__detail">
+              <span class="card__detail-label">Min Deposit</span>
+              <span class="card__detail-value">$250</span>
+            </div>
+            <div class="card__detail">
+              <span class="card__detail-label">Spreads</span>
+              <span class="card__detail-value">0.6 pips</span>
+            </div>
+          </div>
+          <button class="card__action" data-broker-id="1">View Profile</button>
+        </article>
+        
+        <!-- Card 2: Pepperstone -->
+        <article class="card">
+          <div class="card__header">
+            <div class="card__logo">PP</div>
+            <button class="card__bookmark" aria-label="Bookmark">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+              </svg>
+            </button>
+          </div>
+          <h3 class="card__name">Pepperstone</h3>
+          <div class="card__rating">
+            <div class="card__stars">
+              <span class="card__star">★</span>
+              <span class="card__star">★</span>
+              <span class="card__star">★</span>
+              <span class="card__star">★</span>
+              <span class="card__star">★</span>
+            </div>
+            <span class="card__reviews">(152 reviews)</span>
+          </div>
+          <div class="card__meta">
+            <span class="card__type">Forex Broker</span>
+            <span class="card__meta-separator">·</span>
+            <span class="card__location">
+              <svg width="14" height="14" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+              </svg>
+              Australia
+            </span>
+          </div>
+          <div class="card__badges">
+            <span class="badge badge--fca">FCA</span>
+            <span class="badge badge--asic">ASIC</span>
+            <span class="badge badge--mt4">MT4</span>
+            <span class="badge badge--ctrader">cTrader</span>
+          </div>
+          <div class="card__details">
+            <div class="card__detail">
+              <span class="card__detail-label">Min Deposit</span>
+              <span class="card__detail-value">$0</span>
+            </div>
+            <div class="card__detail">
+              <span class="card__detail-label">Spreads</span>
+              <span class="card__detail-value">0.0 pips</span>
+            </div>
+          </div>
+          <button class="card__action" data-broker-id="2">View Profile</button>
+        </article>
+        
+        <!-- Card 3: oneZero Financial -->
+        <article class="card">
+          <div class="card__header">
+            <div class="card__logo">oZ</div>
+            <button class="card__bookmark" aria-label="Bookmark">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+              </svg>
+            </button>
+          </div>
+          <h3 class="card__name">oneZero Financial</h3>
+          <div class="card__rating">
+            <div class="card__stars">
+              <span class="card__star">★</span>
+              <span class="card__star">★</span>
+              <span class="card__star">★</span>
+              <span class="card__star">★</span>
+              <span class="card__star empty">☆</span>
+            </div>
+            <span class="card__reviews">(24 reviews)</span>
+          </div>
+          <div class="card__meta">
+            <span class="card__type">Technology Provider</span>
+            <span class="card__meta-separator">·</span>
+            <span class="card__location">
+              <svg width="14" height="14" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+              </svg>
+              USA
+            </span>
+          </div>
+          <div class="card__badges">
+            <span class="badge badge--fca">FCA</span>
+            <span class="badge badge--asic">ASIC</span>
+            <span class="badge badge--mt5">MT5</span>
+            <span class="badge badge--ctrader">cTrader</span>
+          </div>
+          <div class="card__details">
+            <div class="card__detail">
+              <span class="card__detail-label">Service Type</span>
+              <span class="card__detail-value">Custom</span>
+            </div>
+          </div>
+          <button class="card__action" data-broker-id="3">View Profile</button>
+        </article>
+        
+        <!-- Card 4: Complytrek -->
+        <article class="card">
+          <div class="card__header">
+            <div class="card__logo">CT</div>
+            <button class="card__bookmark" aria-label="Bookmark">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+              </svg>
+            </button>
+          </div>
+          <h3 class="card__name">Complytrek</h3>
+          <div class="card__rating">
+            <div class="card__stars">
+              <span class="card__star">★</span>
+              <span class="card__star">★</span>
+              <span class="card__star">★</span>
+              <span class="card__star">★</span>
+              <span class="card__star empty">☆</span>
+            </div>
+            <span class="card__reviews">(19 reviews)</span>
+          </div>
+          <div class="card__meta">
+            <span class="card__type">Service Provider</span>
+            <span class="card__meta-separator">·</span>
+            <span class="card__location">
+              <svg width="14" height="14" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+              </svg>
+              Europe
+            </span>
+          </div>
+          <div class="card__badges">
+            <span class="badge badge--fca">FCA</span>
+            <span class="badge badge--asic">ASIC</span>
+            <span class="badge badge--mt4">MT4</span>
+            <span class="badge badge--ctrader">cTrader</span>
+          </div>
+          <div class="card__details">
+            <div class="card__detail">
+              <span class="card__detail-label">Service Type</span>
+              <span class="card__detail-value">Fixed Fee</span>
+            </div>
+            <div class="card__detail">
+              <span class="card__detail-label">Focus</span>
+              <span class="card__detail-value">Compliance</span>
+            </div>
+          </div>
+          <button class="card__action" data-broker-id="4">View Profile</button>
+        </article>
+      </div>
+      
+      <!-- Pagination -->
+      <nav class="pagination" aria-label="Results pagination">
+        <button class="pagination__btn" aria-label="Previous page" disabled>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path d="m15 18-6-6 6-6"/>
+          </svg>
+        </button>
+        <button class="pagination__btn active">1</button>
+        <button class="pagination__btn">2</button>
+        <button class="pagination__btn">3</button>
+        <span class="pagination__ellipsis">...</span>
+        <button class="pagination__btn">12</button>
+        <button class="pagination__btn" aria-label="Next page">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path d="m9 18 6-6-6-6"/>
+          </svg>
+        </button>
+      </nav>
+    </section>
+  </main>
+  
+  <!-- Mobile Filter Modal -->
+  <div class="filter-modal" id="filter-modal">
+    <div class="filter-modal__content">
+      <div class="filter-modal__header">
+        <h2 class="filter-modal__title">Filters</h2>
+        <button class="filter-modal__close" aria-label="Close filters">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path d="M18 6 6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="filter-modal__body">
+        <!-- Mobile filters content mirrors sidebar filters -->
+        <!-- Regulation -->
+        <div class="filter-section">
+          <div class="filter-section__header">
+            <h3 class="filter-section__title">Regulation</h3>
+            <svg class="filter-section__toggle" width="16" height="16" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path d="m6 9 6 6 6-6"/>
+            </svg>
+          </div>
+          <div class="filter-section__content">
+            <label class="filter-option" data-filter-type="regulation" data-filter-value="FCA">
+              <span class="filter-option__checkbox"></span>
+              <span class="filter-option__label">FCA</span>
+            </label>
+            <label class="filter-option" data-filter-type="regulation" data-filter-value="CySEC">
+              <span class="filter-option__checkbox"></span>
+              <span class="filter-option__label">CySEC</span>
+            </label>
+            <label class="filter-option" data-filter-type="regulation" data-filter-value="ASIC">
+              <span class="filter-option__checkbox"></span>
+              <span class="filter-option__label">ASIC</span>
+            </label>
+          </div>
+        </div>
+        
+        <!-- Trading Platforms -->
+        <div class="filter-section">
+          <div class="filter-section__header">
+            <h3 class="filter-section__title">Trading Platforms</h3>
+            <svg class="filter-section__toggle" width="16" height="16" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path d="m6 9 6 6 6-6"/>
+            </svg>
+          </div>
+          <div class="filter-section__content">
+            <label class="filter-option" data-filter-type="platforms" data-filter-value="MT4">
+              <span class="filter-option__checkbox"></span>
+              <span class="filter-option__label">MT4</span>
+            </label>
+            <label class="filter-option" data-filter-type="platforms" data-filter-value="MT5">
+              <span class="filter-option__checkbox"></span>
+              <span class="filter-option__label">MT5</span>
+            </label>
+            <label class="filter-option" data-filter-type="platforms" data-filter-value="cTrader">
+              <span class="filter-option__checkbox"></span>
+              <span class="filter-option__label">cTrader</span>
+            </label>
+          </div>
+        </div>
+        
+        <!-- Location -->
+        <div class="filter-section">
+          <div class="filter-section__header">
+            <h3 class="filter-section__title">Location</h3>
+            <svg class="filter-section__toggle" width="16" height="16" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path d="m6 9 6 6 6-6"/>
+            </svg>
+          </div>
+          <div class="filter-section__content">
+            <label class="filter-option" data-filter-type="location" data-filter-value="uk">
+              <span class="filter-option__checkbox"></span>
+              <span class="filter-option__label">United Kingdom</span>
+            </label>
+            <label class="filter-option" data-filter-type="location" data-filter-value="europe">
+              <span class="filter-option__checkbox"></span>
+              <span class="filter-option__label">Europe</span>
+            </label>
+            <label class="filter-option" data-filter-type="location" data-filter-value="australia">
+              <span class="filter-option__checkbox"></span>
+              <span class="filter-option__label">Australia</span>
+            </label>
+            <label class="filter-option" data-filter-type="location" data-filter-value="usa">
+              <span class="filter-option__checkbox"></span>
+              <span class="filter-option__label">United States</span>
+            </label>
+          </div>
+        </div>
+        
+        <!-- Verified Only Toggle -->
+        <div class="toggle-wrapper">
+          <span class="toggle-label">Verified Only</span>
+          <div class="toggle" data-filter-type="verifiedOnly">
+            <div class="toggle__knob"></div>
+          </div>
+        </div>
+      </div>
+      <div class="filter-modal__footer">
+        <button class="filters__apply">Apply Filters</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- JavaScript -->
+  <script src="js/main.js"></script>
+</body>
+</html>
