@@ -4,7 +4,7 @@
  */
 
 // Enqueue parent and child theme styles and scripts
-function onelisting_pro_child_enqueue_styles() {
+function enqueue_the_reporter_child() {
     // Enqueue parent theme stylesheet
     wp_enqueue_style(
         'onelisting-pro-parent-style',
@@ -36,7 +36,8 @@ function onelisting_pro_child_enqueue_styles() {
         true
     );
 }
-add_action('wp_enqueue_scripts', 'onelisting_pro_child_enqueue_styles');
+add_action('wp_enqueue_scripts', 'enqueue_the_reporter_child');
+
 
 
 
