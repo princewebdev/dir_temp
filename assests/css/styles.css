@@ -1549,9 +1549,37 @@ body.pwdev-page-profile .pwdev-directorist-actions-wrap .directorist-single-list
   position: relative;
 }
 
+body.pwdev-page-profile .pwdev-btn,
+body.pwdev-page-profile .directorist-single-listing-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  position: relative;
+  overflow: visible;
+}
+
+body.pwdev-page-profile .pwdev-btn::before,
+body.pwdev-page-profile .pwdev-btn::after,
+body.pwdev-page-profile .directorist-single-listing-action::before,
+body.pwdev-page-profile .directorist-single-listing-action::after,
+body.pwdev-page-profile .pwdev-directorist-actions-wrap .directorist-action-save-wrap::before,
+body.pwdev-page-profile .pwdev-directorist-actions-wrap .directorist-action-save-wrap::after {
+  background: transparent !important;
+  box-shadow: none !important;
+  pointer-events: none !important;
+}
+
 body.pwdev-page-profile .pwdev-directorist-actions-wrap .directorist-single-listing-action:hover {
   border-color: #dc2626;
   color: #dc2626;
+}
+
+body.pwdev-page-profile .pwdev-directorist-actions-wrap .directorist-action-bookmark,
+body.pwdev-page-profile .pwdev-directorist-actions-wrap .directorist-action-report,
+body.pwdev-page-profile .pwdev-directorist-actions-wrap .directorist-social-share {
+  z-index: 3;
+  pointer-events: auto;
 }
 
 body.pwdev-page-profile .pwdev-directorist-actions-wrap .directorist-single-listing-action .directorist-single-listing-action__text,
@@ -2289,6 +2317,16 @@ body.pwdev-page-profile .pwdev-profile-hero__location {
   padding-top: 70px;
 }
 
+.pwdev-profile-hero__actions-label {
+  color: #111827;
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  user-select: none;
+  pointer-events: none;
+}
+
 .pwdev-btn--lg {
   padding: 1rem 2rem;
   font-size: 1rem;
@@ -2857,6 +2895,15 @@ body.pwdev-page-profile .pwdev-profile-hero__location {
   font-weight: 500;
   color: #111827;
   text-align: left;
+}
+
+body.pwdev-page-profile .pwdev-faq-item__question {
+  background: transparent !important;
+}
+
+body.pwdev-page-profile .pwdev-faq-item__question::before,
+body.pwdev-page-profile .pwdev-faq-item__question::after {
+  background: transparent !important;
 }
 
 .pwdev-faq-item__icon {

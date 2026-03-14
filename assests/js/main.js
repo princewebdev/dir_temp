@@ -362,7 +362,13 @@ function initProfilePageInteractions() {
     button.addEventListener('click', () => {
       const item = button.closest('.pwdev-faq-item');
       if (item) {
-        item.classList.toggle('pwdev-faq-item--expanded');
+        const answer = item.querySelector('.pwdev-faq-item__answer');
+        const isExpanded = item.classList.toggle('pwdev-faq-item--expanded');
+
+        button.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+        if (answer) {
+          answer.hidden = !isExpanded;
+        }
       }
     });
   });

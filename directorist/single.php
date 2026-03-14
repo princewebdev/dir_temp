@@ -139,13 +139,15 @@ if ( have_posts() ) :
 		$regulation_items    = $get_list_meta( array( '_regulation', '_custom-checkbox' ) );
 		$platform_items      = $get_list_meta( array( '_trading_platforms', '_custom-checkbox-2' ) );
 		$payment_items       = $get_list_meta( array( '_payment_methods', '_custom-checkbox-4' ) );
-		$countries_items     = $get_list_meta( array( '_countries_served', '_custom-checkbox-5' ) );
+		$account_types_items = $get_list_meta( array( '_account_types', '_custom-checkbox-5' ) );
+		$countries_items     = $get_list_meta( array( '_countries_served' ) );
 
 		$asset_classes     = ! empty( $asset_classes_items ) ? implode( ', ', $asset_classes_items ) : '';
 		$payment_methods   = ! empty( $payment_items ) ? implode( ', ', $payment_items ) : '';
 		$countries         = ! empty( $countries_items ) ? implode( ', ', $countries_items ) : '';
 		$regulation        = ! empty( $regulation_items ) ? implode( ', ', $regulation_items ) : '';
 		$trading_platforms = ! empty( $platform_items ) ? implode( ', ', $platform_items ) : '';
+		$account_types     = ! empty( $account_types_items ) ? implode( ', ', $account_types_items ) : '';
 
 		$min_deposit_num = str_replace( array( '$', ',', ' ' ), '', $min_deposit );
 		if ( $min_deposit !== '' && is_numeric( $min_deposit_num ) ) {
@@ -360,7 +362,7 @@ if ( have_posts() ) :
 							</div>
 						</div>
 						<div class="pwdev-profile-hero__actions">
-							<button class="pwdev-btn pwdev-btn--primary pwdev-btn--lg">More Info</button>
+							<span class="pwdev-profile-hero__actions-label">More Info</span>
 							<div class="pwdev-directorist-actions-wrap">
 								<?php
 								$listing = $directorist_listing;
@@ -526,6 +528,24 @@ if ( have_posts() ) :
 										<div class="pwdev-overview-item__content">
 											<span class="pwdev-overview-item__label">Payment Methods</span>
 										<span class="pwdev-overview-item__value"><?php echo esc_html( $payment_methods ); ?></span>
+										</div>
+									</div>
+									<?php endif; ?>
+
+									<?php if ( ! empty( $account_types_items ) ) : ?>
+									<div class="pwdev-overview-item">
+										<div class="pwdev-overview-item__icon">
+											<svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#111827" stroke-width="2">
+												<path d="M3 7h18M3 12h18M3 17h18"/>
+											</svg>
+										</div>
+										<div class="pwdev-overview-item__content">
+											<span class="pwdev-overview-item__label">Account Types</span>
+											<div class="pwdev-overview-item__badges">
+												<?php foreach ( $account_types_items as $account_type_item ) : ?>
+													<span class="pwdev-badge pwdev-badge--<?php echo esc_attr( sanitize_title( $account_type_item ) ); ?>"><?php echo esc_html( $account_type_item ); ?></span>
+												<?php endforeach; ?>
+											</div>
 										</div>
 									</div>
 									<?php endif; ?>
@@ -774,19 +794,22 @@ if ( have_posts() ) :
 								<h2 class="pwdev-profile-section__title">Frequently Asked Questions</h2>
 								<div class="pwdev-faq-list">
 									<?php if ( ! empty( $faqs ) && is_array( $faqs ) ) : ?>
+										<?php $faq_index = 0; ?>
 										<?php foreach ( $faqs as $faq_item ) :
 											$faq_question = isset( $faq_item['quez'] ) ? $faq_item['quez'] : '';
 											$faq_answer   = isset( $faq_item['ans'] ) ? $faq_item['ans'] : '';
 											if ( empty( $faq_question ) ) continue;
+											$faq_index++;
+											$faq_answer_id = 'pwdev-faq-answer-' . $listing_id . '-' . $faq_index;
 										?>
 										<div class="pwdev-faq-item">
-											<button class="pwdev-faq-item__question">
+											<button class="pwdev-faq-item__question" type="button" aria-expanded="false" aria-controls="<?php echo esc_attr( $faq_answer_id ); ?>">
 												<span><?php echo esc_html( $faq_question ); ?></span>
 												<svg class="pwdev-faq-item__icon" width="16" height="16" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#111827" stroke-width="2">
 													<path d="m6 9 6 6 6-6"/>
 												</svg>
 											</button>
-											<div class="pwdev-faq-item__answer">
+											<div class="pwdev-faq-item__answer" id="<?php echo esc_attr( $faq_answer_id ); ?>" hidden>
 												<p><?php echo esc_html( $faq_answer ); ?></p>
 											</div>
 										</div>
