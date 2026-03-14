@@ -11,6 +11,9 @@ if ( have_posts() ) :
 		the_post();
 
 		$listing_id = get_the_ID();
+		$directorist_listing = class_exists( '\\Directorist\\Directorist_Single_Listing' )
+			? \Directorist\Directorist_Single_Listing::instance( (int) $listing_id )
+			: null;
 
 		// Fetching Directorist Meta Data
 		$address      = get_post_meta( $listing_id, '_address', true );
@@ -68,22 +71,108 @@ if ( have_posts() ) :
 		// Tags
 		$tags = get_the_terms( $listing_id, ATBDP_TAGS );
 
-		// Overview Custom Fields (meta keys from functions.php)
-		$year_founded      = get_post_meta( $listing_id, '_year_founded', true );
-		$min_deposit       = get_post_meta( $listing_id, '_min_deposit', true );
-		$execution_type    = get_post_meta( $listing_id, '_execution_type', true );
-		$headquarters      = get_post_meta( $listing_id, '_headquarters', true );
-		$max_leverage      = get_post_meta( $listing_id, '_max_leverage', true );
-		$asset_classes     = get_post_meta( $listing_id, '_asset_classes', true );
-		$regulation        = get_post_meta( $listing_id, '_regulation', true );
-		$trading_platforms = get_post_meta( $listing_id, '_trading_platforms', true );
-		$payment_methods   = get_post_meta( $listing_id, '_payment_methods', true );
-		$publicly_listed   = get_post_meta( $listing_id, '_publicly_listed', true );
-		$spreads_from      = get_post_meta( $listing_id, '_spreads_from', true );
-		$countries         = get_post_meta( $listing_id, '_countries_served', true );
+		// Overview fields: ignore auto-import placeholders and prefer real custom field values.
+		$placeholder_values = array(
+			'deposit', 'from', 'spreads', 'regulation', 'platforms', 'methods',
+			'founded', 'execution', 'headquarters', 'leverage', 'classes',
+			'publicly listed', 'served'
+		);
 
-		// Editorial Review
-		$editorial_review = get_post_meta( $listing_id, '_editorial_review', true );
+		$is_placeholder_value = static function( $value ) use ( $placeholder_values ) {
+			$normalized = strtolower( trim( wp_strip_all_tags( (string) $value ) ) );
+			return $normalized === '' || in_array( $normalized, $placeholder_values, true );
+		};
+
+		$get_first_valid_meta = static function( $keys ) use ( $listing_id, $is_placeholder_value ) {
+			foreach ( $keys as $meta_key ) {
+				$meta_val = get_post_meta( $listing_id, $meta_key, true );
+				$meta_val = maybe_unserialize( $meta_val );
+
+				if ( is_array( $meta_val ) || is_object( $meta_val ) ) {
+					continue;
+				}
+
+				$value = trim( wp_strip_all_tags( (string) $meta_val ) );
+				if ( $is_placeholder_value( $value ) ) {
+					continue;
+				}
+
+				return $value;
+			}
+
+			return '';
+		};
+
+		$get_list_meta = static function( $keys ) use ( $listing_id, $is_placeholder_value ) {
+			$results = array();
+
+			foreach ( $keys as $meta_key ) {
+				$meta_val = get_post_meta( $listing_id, $meta_key, true );
+				$meta_val = maybe_unserialize( $meta_val );
+
+				if ( is_array( $meta_val ) ) {
+					$items = $meta_val;
+				} else {
+					$items = explode( ',', (string) $meta_val );
+				}
+
+				foreach ( $items as $item ) {
+					$label = trim( wp_strip_all_tags( (string) $item ) );
+					if ( $is_placeholder_value( $label ) ) {
+						continue;
+					}
+					$results[ $label ] = $label;
+				}
+			}
+
+			return array_values( $results );
+		};
+
+		$year_founded        = $get_first_valid_meta( array( '_year_founded', '_custom-number' ) );
+		$min_deposit         = $get_first_valid_meta( array( '_min_deposit', '_custom-number-3' ) );
+		$execution_type      = $get_first_valid_meta( array( '_execution_type', '_custom-select-3' ) );
+		$headquarters        = $get_first_valid_meta( array( '_headquarters', '_custom-text' ) );
+		$max_leverage        = $get_first_valid_meta( array( '_max_leverage', '_custom-text-3' ) );
+		$publicly_listed     = $get_first_valid_meta( array( '_publicly_listed', '_custom-select-2' ) );
+		$spreads_from        = $get_first_valid_meta( array( '_spreads_from', '_custom-text-5' ) );
+		$asset_classes_items = $get_list_meta( array( '_asset_classes', '_custom-checkbox-3' ) );
+		$regulation_items    = $get_list_meta( array( '_regulation', '_custom-checkbox' ) );
+		$platform_items      = $get_list_meta( array( '_trading_platforms', '_custom-checkbox-2' ) );
+		$payment_items       = $get_list_meta( array( '_payment_methods', '_custom-checkbox-4' ) );
+		$countries_items     = $get_list_meta( array( '_countries_served', '_custom-checkbox-5' ) );
+
+		$asset_classes     = ! empty( $asset_classes_items ) ? implode( ', ', $asset_classes_items ) : '';
+		$payment_methods   = ! empty( $payment_items ) ? implode( ', ', $payment_items ) : '';
+		$countries         = ! empty( $countries_items ) ? implode( ', ', $countries_items ) : '';
+		$regulation        = ! empty( $regulation_items ) ? implode( ', ', $regulation_items ) : '';
+		$trading_platforms = ! empty( $platform_items ) ? implode( ', ', $platform_items ) : '';
+
+		$min_deposit_num = str_replace( array( '$', ',', ' ' ), '', $min_deposit );
+		if ( $min_deposit !== '' && is_numeric( $min_deposit_num ) ) {
+			$min_deposit = '$' . number_format_i18n( (float) $min_deposit_num );
+		}
+
+		$spreads_num = str_replace( array( ',', ' ' ), '', $spreads_from );
+		if ( $spreads_from !== '' && is_numeric( $spreads_num ) && stripos( $spreads_from, 'pip' ) === false ) {
+			$spreads_fmt  = rtrim( rtrim( number_format( (float) $spreads_num, 2, '.', '' ), '0' ), '.' );
+			$spreads_from = $spreads_fmt . ' pips';
+		}
+
+		// Editorial sections from listing form fields.
+		$overview_content           = get_post_meta( $listing_id, '_custom-textarea', true );
+		$trading_experience_content = get_post_meta( $listing_id, '_custom-textarea-3', true );
+		$fees_pricing_content       = get_post_meta( $listing_id, '_custom-textarea-4', true );
+		$editorial_review           = get_post_meta( $listing_id, '_editorial_review', true );
+
+		if ( ! is_string( $overview_content ) ) {
+			$overview_content = '';
+		}
+		if ( ! is_string( $trading_experience_content ) ) {
+			$trading_experience_content = '';
+		}
+		if ( ! is_string( $fees_pricing_content ) ) {
+			$fees_pricing_content = '';
+		}
 
 		// Gallery Images
 		$gallery_images = array();
@@ -177,7 +266,7 @@ if ( have_posts() ) :
 				<div class="pwdev-container">
 					<ol class="pwdev-breadcrumb__list">
 						<li class="pwdev-breadcrumb__item">
-							<a href="<?php echo esc_url( $directory_url ); ?>" class="pwdev-breadcrumb__link"><?php echo esc_html( $directory_label ); ?></a>
+							<a href="/all-listings/" class="pwdev-breadcrumb__link"><?php echo esc_html( 'All Listings' ); ?></a>
 						</li>
 						<li class="pwdev-breadcrumb__separator">&rsaquo;</li>
 						<li class="pwdev-breadcrumb__item">
@@ -272,21 +361,22 @@ if ( have_posts() ) :
 						</div>
 						<div class="pwdev-profile-hero__actions">
 							<button class="pwdev-btn pwdev-btn--primary pwdev-btn--lg">More Info</button>
-							<button class="pwdev-btn pwdev-btn--icon" aria-label="Share">
-								<svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#111827" stroke-width="2">
-									<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-								</svg>
-							</button>
-							<button class="pwdev-btn pwdev-btn--icon" aria-label="Bookmark">
-								<svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#111827" stroke-width="2">
-									<path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
-								</svg>
-							</button>
-							<button class="pwdev-btn pwdev-btn--icon" aria-label="Report">
-								<svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#111827" stroke-width="2">
-									<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/>
-								</svg>
-							</button>
+							<div class="pwdev-directorist-actions-wrap">
+								<?php
+								$listing = $directorist_listing;
+								$data    = array( 'label' => __( 'Share', 'directorist' ) );
+								$icon    = 'las la-share-square';
+								include get_stylesheet_directory() . '/directorist/single/fields/share.php';
+
+								$data    = array( 'label' => __( 'Bookmark', 'directorist' ) );
+								$icon    = 'las la-bookmark';
+								include get_stylesheet_directory() . '/directorist/single/fields/bookmark.php';
+
+								$data    = array( 'label' => __( 'Report', 'directorist' ) );
+								$icon    = 'las la-flag';
+								include get_stylesheet_directory() . '/directorist/single/fields/report.php';
+								?>
+							</div>
 						</div>
 					</div>
 				</div>
@@ -300,6 +390,7 @@ if ( have_posts() ) :
 								<h2 class="pwdev-profile-section__title">Overview</h2>
 								<div class="pwdev-overview-grid pwdev-overview-grid--with-icons">
 									
+									<?php if ( $year_founded ) : ?>
 									<div class="pwdev-overview-item">
 										<div class="pwdev-overview-item__icon">
 											<svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#111827" stroke-width="2">
@@ -308,10 +399,12 @@ if ( have_posts() ) :
 										</div>
 										<div class="pwdev-overview-item__content">
 											<span class="pwdev-overview-item__label">Year Founded</span>
-											<span class="pwdev-overview-item__value"><?php echo !empty( $year_founded ) ? esc_html( $year_founded ) : ''; ?></span>
+											<span class="pwdev-overview-item__value"><?php echo esc_html( $year_founded ); ?></span>
 										</div>
 									</div>
+									<?php endif; ?>
 
+									<?php if ( $min_deposit ) : ?>
 									<div class="pwdev-overview-item">
 										<div class="pwdev-overview-item__icon">
 											<svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#111827" stroke-width="2">
@@ -320,10 +413,12 @@ if ( have_posts() ) :
 										</div>
 										<div class="pwdev-overview-item__content">
 											<span class="pwdev-overview-item__label">Min Deposit</span>
-											<span class="pwdev-overview-item__value"><?php echo !empty( $min_deposit ) ? esc_html( $min_deposit ) : ''; ?></span>
+											<span class="pwdev-overview-item__value"><?php echo esc_html( $min_deposit ); ?></span>
 										</div>
 									</div>
+									<?php endif; ?>
 
+									<?php if ( $execution_type ) : ?>
 									<div class="pwdev-overview-item">
 										<div class="pwdev-overview-item__icon">
 											<svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#111827" stroke-width="2">
@@ -332,10 +427,12 @@ if ( have_posts() ) :
 										</div>
 										<div class="pwdev-overview-item__content">
 											<span class="pwdev-overview-item__label">Execution Type</span>
-											<span class="pwdev-overview-item__value"><?php echo !empty( $execution_type ) ? esc_html( $execution_type ) : ''; ?></span>
+											<span class="pwdev-overview-item__value"><?php echo esc_html( $execution_type ); ?></span>
 										</div>
 									</div>
+									<?php endif; ?>
 
+									<?php if ( $headquarters ) : ?>
 									<div class="pwdev-overview-item">
 										<div class="pwdev-overview-item__icon">
 											<svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#111827" stroke-width="2">
@@ -344,10 +441,12 @@ if ( have_posts() ) :
 										</div>
 										<div class="pwdev-overview-item__content">
 											<span class="pwdev-overview-item__label">Headquarters</span>
-											<span class="pwdev-overview-item__value"><?php echo !empty( $headquarters ) ? esc_html( $headquarters ) : ''; ?></span>
+											<span class="pwdev-overview-item__value"><?php echo esc_html( $headquarters ); ?></span>
 										</div>
 									</div>
+									<?php endif; ?>
 
+									<?php if ( $max_leverage ) : ?>
 									<div class="pwdev-overview-item">
 										<div class="pwdev-overview-item__icon">
 											<svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#111827" stroke-width="2">
@@ -356,10 +455,12 @@ if ( have_posts() ) :
 										</div>
 										<div class="pwdev-overview-item__content">
 											<span class="pwdev-overview-item__label">Max Leverage</span>
-											<span class="pwdev-overview-item__value"><?php echo !empty( $max_leverage ) ? esc_html( $max_leverage ) : ''; ?></span>
+											<span class="pwdev-overview-item__value"><?php echo esc_html( $max_leverage ); ?></span>
 										</div>
 									</div>
+									<?php endif; ?>
 
+									<?php if ( $asset_classes ) : ?>
 									<div class="pwdev-overview-item">
 										<div class="pwdev-overview-item__icon">
 											<svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#111827" stroke-width="2">
@@ -368,10 +469,12 @@ if ( have_posts() ) :
 										</div>
 										<div class="pwdev-overview-item__content">
 											<span class="pwdev-overview-item__label">Asset Classes</span>
-											<span class="pwdev-overview-item__value"><?php echo !empty( $asset_classes ) ? esc_html( $asset_classes ) : ''; ?></span>
+											<span class="pwdev-overview-item__value"><?php echo esc_html( $asset_classes ); ?></span>
 										</div>
 									</div>
+									<?php endif; ?>
 
+									<?php if ( ! empty( $regulation_items ) ) : ?>
 									<div class="pwdev-overview-item">
 										<div class="pwdev-overview-item__icon">
 											<svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#111827" stroke-width="2">
@@ -380,20 +483,19 @@ if ( have_posts() ) :
 										</div>
 										<div class="pwdev-overview-item__content">
 											<span class="pwdev-overview-item__label">Regulation</span>
-										<?php if ( $regulation ) : ?>
 											<div class="pwdev-overview-item__badges">
 												<?php
-												$reg_items = array_map( 'trim', explode( ',', $regulation ) );
-												foreach ( $reg_items as $reg_item ) :
+												foreach ( $regulation_items as $reg_item ) :
 													$badge_slug = sanitize_title( $reg_item );
 												?>
 													<span class="pwdev-badge pwdev-badge--<?php echo esc_attr( $badge_slug ); ?>"><?php echo esc_html( $reg_item ); ?></span>
 												<?php endforeach; ?>
 											</div>
-										<?php endif; ?>
 										</div>
 									</div>
+									<?php endif; ?>
 
+									<?php if ( ! empty( $platform_items ) ) : ?>
 									<div class="pwdev-overview-item">
 										<div class="pwdev-overview-item__icon">
 											<svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#111827" stroke-width="2">
@@ -402,20 +504,19 @@ if ( have_posts() ) :
 										</div>
 										<div class="pwdev-overview-item__content">
 											<span class="pwdev-overview-item__label">Trading Platforms</span>
-										<?php if ( $trading_platforms ) : ?>
 											<div class="pwdev-overview-item__badges">
 												<?php
-												$tp_items = array_map( 'trim', explode( ',', $trading_platforms ) );
-												foreach ( $tp_items as $tp_item ) :
+												foreach ( $platform_items as $tp_item ) :
 													$badge_slug = sanitize_title( $tp_item );
 												?>
 													<span class="pwdev-badge pwdev-badge--<?php echo esc_attr( $badge_slug ); ?>"><?php echo esc_html( $tp_item ); ?></span>
 												<?php endforeach; ?>
 											</div>
-										<?php endif; ?>
 										</div>
 									</div>
+									<?php endif; ?>
 
+									<?php if ( $payment_methods ) : ?>
 									<div class="pwdev-overview-item">
 										<div class="pwdev-overview-item__icon">
 											<svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#111827" stroke-width="2">
@@ -424,10 +525,12 @@ if ( have_posts() ) :
 										</div>
 										<div class="pwdev-overview-item__content">
 											<span class="pwdev-overview-item__label">Payment Methods</span>
-										<span class="pwdev-overview-item__value"><?php echo !empty( $payment_methods ) ? esc_html( $payment_methods ) : ''; ?></span>
+										<span class="pwdev-overview-item__value"><?php echo esc_html( $payment_methods ); ?></span>
 										</div>
 									</div>
+									<?php endif; ?>
 
+									<?php if ( $publicly_listed ) : ?>
 									<div class="pwdev-overview-item">
 										<div class="pwdev-overview-item__icon">
 											<svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#111827" stroke-width="2">
@@ -436,10 +539,12 @@ if ( have_posts() ) :
 										</div>
 										<div class="pwdev-overview-item__content">
 											<span class="pwdev-overview-item__label">Publicly Listed</span>
-										<span class="pwdev-overview-item__value"><?php echo !empty( $publicly_listed ) ? esc_html( $publicly_listed ) : ''; ?></span>
+										<span class="pwdev-overview-item__value"><?php echo esc_html( $publicly_listed ); ?></span>
 										</div>
 									</div>
+									<?php endif; ?>
 
+									<?php if ( $spreads_from ) : ?>
 									<div class="pwdev-overview-item">
 										<div class="pwdev-overview-item__icon">
 											<svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#111827" stroke-width="2">
@@ -448,10 +553,12 @@ if ( have_posts() ) :
 										</div>
 										<div class="pwdev-overview-item__content">
 											<span class="pwdev-overview-item__label">Spreads From</span>
-											<span class="pwdev-overview-item__value"><?php echo !empty( $spreads_from ) ? esc_html( $spreads_from ) : ''; ?></span>
+											<span class="pwdev-overview-item__value"><?php echo esc_html( $spreads_from ); ?></span>
 										</div>
 									</div>
+									<?php endif; ?>
 
+									<?php if ( $countries ) : ?>
 									<div class="pwdev-overview-item">
 										<div class="pwdev-overview-item__icon">
 											<svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#111827" stroke-width="2">
@@ -460,9 +567,10 @@ if ( have_posts() ) :
 										</div>
 										<div class="pwdev-overview-item__content">
 											<span class="pwdev-overview-item__label">Countries Served</span>
-											<span class="pwdev-overview-item__value"><?php echo !empty( $countries ) ? esc_html( $countries ) : ''; ?></span>
+											<span class="pwdev-overview-item__value"><?php echo esc_html( $countries ); ?></span>
 										</div>
 									</div>
+									<?php endif; ?>
 								</div>
 							</section>
 
@@ -484,8 +592,23 @@ if ( have_posts() ) :
 								</div>
 								
 								<div class="pwdev-review-content">
-									<?php 
-									if ( $editorial_review ) {
+									<?php if ( $overview_content ) : ?>
+										<h3>Overview</h3>
+										<?php echo apply_filters( 'the_content', $overview_content ); ?>
+									<?php endif; ?>
+
+									<?php if ( $trading_experience_content ) : ?>
+										<h3>Trading Experience</h3>
+										<?php echo apply_filters( 'the_content', $trading_experience_content ); ?>
+									<?php endif; ?>
+
+									<?php if ( $fees_pricing_content ) : ?>
+										<h3>Fees &amp; Pricing</h3>
+										<?php echo apply_filters( 'the_content', $fees_pricing_content ); ?>
+									<?php endif; ?>
+
+									<?php
+									if ( ! $overview_content && ! $trading_experience_content && ! $fees_pricing_content && $editorial_review ) {
 										echo apply_filters( 'the_content', $editorial_review );
 									}
 									?>

@@ -21,8 +21,28 @@ function trc_is_directorist_page() {
         return true;
     }
 
+    // Support custom listing pages powered by Directorist shortcodes.
+    if ( is_page( array( 'all-listings-3', 'all-listings', 'directorist' ) ) ) {
+        return true;
+    }
+
+    $queried_id = get_queried_object_id();
+    if ( $queried_id ) {
+        $content = get_post_field( 'post_content', $queried_id );
+        if ( is_string( $content ) && (
+            has_shortcode( $content, 'directorist_all_listing' ) ||
+            has_shortcode( $content, 'directorist_search_listing' )
+        ) ) {
+            return true;
+        }
+    }
+
     $request_uri = isset( $_SERVER['REQUEST_URI'] ) ? wp_unslash( $_SERVER['REQUEST_URI'] ) : '';
-    if ( $request_uri && false !== strpos( $request_uri, '/directory/' ) ) {
+    if ( $request_uri && (
+        false !== strpos( $request_uri, '/directory/' ) ||
+        false !== strpos( $request_uri, '/directorist/' ) ||
+        false !== strpos( $request_uri, '/all-listings-3/' )
+    ) ) {
         return true;
     }
 
