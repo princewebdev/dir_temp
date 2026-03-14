@@ -210,6 +210,46 @@ function initPagination() {
 }
 
 // ============================================
+// Directorist Profile Page
+// ============================================
+function initProfilePageInteractions() {
+  if (!$('.pwdev-profile-content')) {
+    return;
+  }
+
+  $$('.pwdev-faq-item__question').forEach(button => {
+    button.addEventListener('click', () => {
+      const item = button.closest('.pwdev-faq-item');
+      if (item) {
+        item.classList.toggle('pwdev-faq-item--expanded');
+      }
+    });
+  });
+
+  $$('.pwdev-media-gallery__thumb').forEach((thumb, index) => {
+    if (index === 0) {
+      thumb.classList.add('pwdev-media-gallery__thumb--active');
+    }
+
+    thumb.addEventListener('click', () => {
+      const gallery = thumb.closest('.pwdev-media-gallery');
+      if (!gallery) {
+        return;
+      }
+
+      const mainImg = gallery.querySelector('.pwdev-media-gallery__main-img');
+      const fullSrc = thumb.dataset.full;
+
+      if (fullSrc && mainImg) {
+        mainImg.src = fullSrc;
+        $$('.pwdev-media-gallery__thumb', gallery).forEach(t => t.classList.remove('pwdev-media-gallery__thumb--active'));
+        thumb.classList.add('pwdev-media-gallery__thumb--active');
+      }
+    });
+  });
+}
+
+// ============================================
 // Initialize All
 // ============================================
 function init() {
@@ -221,6 +261,7 @@ function init() {
   initViewToggle();
   initBookmarks();
   initPagination();
+  initProfilePageInteractions();
 }
 
 // Initialize when DOM is ready

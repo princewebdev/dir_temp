@@ -60,9 +60,11 @@ $all_tags = get_terms( array( 'taxonomy' => ATBDP_TAGS, 'hide_empty' => false ) 
 if ( is_wp_error( $all_tags ) ) $all_tags = array();
 
 // Dynamic filter values from listing meta
-$regulation_values = array();
+$regulation_values       = array();
 $trading_platform_values = array();
-$spreads_from_values = array();
+$spreads_from_values     = array();
+$min_deposit_values      = array();
+$account_type_values     = array();
 
 $meta_listings = get_posts( array(
 	'post_type'      => ATBDP_POST_TYPE,
@@ -88,10 +90,30 @@ foreach ( $meta_listings as $ml_id ) {
 	if ( $sf ) {
 		$spreads_from_values[ $sf ] = isset( $spreads_from_values[ $sf ] ) ? $spreads_from_values[ $sf ] + 1 : 1;
 	}
+	$md = get_post_meta( $ml_id, '_min_deposit', true );
+	if ( $md !== '' ) {
+		$md_num = (float) preg_replace( '/[^0-9.]/', '', (string) $md );
+		if ( $md_num >= 0 ) {
+			$min_deposit_values[] = $md_num;
+		}
+	}
+	$at = get_post_meta( $ml_id, '_account_type', true );
+	if ( $at ) {
+		foreach ( array_map( 'trim', explode( ',', $at ) ) as $a ) {
+			if ( $a !== '' ) $account_type_values[ $a ] = isset( $account_type_values[ $a ] ) ? $account_type_values[ $a ] + 1 : 1;
+		}
+	}
 }
 arsort( $regulation_values );
 arsort( $trading_platform_values );
 arsort( $spreads_from_values );
+arsort( $account_type_values );
+
+$deposit_min = ! empty( $min_deposit_values ) ? (int) min( $min_deposit_values ) : 0;
+$deposit_max = ! empty( $min_deposit_values ) ? (int) max( $min_deposit_values ) : 10000;
+if ( $deposit_max <= $deposit_min ) {
+	$deposit_max = $deposit_min + 10000;
+}
 
 // Search & filter URLs
 $search_page_id = get_directorist_option( 'search_result_page' );
@@ -105,6 +127,26 @@ $current_tags = isset( $_GET['in_tag'] ) ? array_map( 'sanitize_text_field', (ar
 $current_view = ! empty( $_GET['view'] ) ? sanitize_text_field( wp_unslash( $_GET['view'] ) ) : $listings->view;
 $current_rating   = isset( $_GET['search_by_rating'] ) ? (int) $_GET['search_by_rating'] : 0;
 $current_dir_slug = isset( $_GET['directory_type'] ) ? sanitize_text_field( wp_unslash( $_GET['directory_type'] ) ) : '';
+
+// Custom meta field filters from URL (e.g. ?custom_field[regulation][]=FCA)
+$raw_custom_fields     = isset( $_GET['custom_field'] ) && is_array( $_GET['custom_field'] ) ? wp_unslash( $_GET['custom_field'] ) : array();
+$current_regulations   = isset( $raw_custom_fields['regulation'] ) ? array_map( 'sanitize_text_field', (array) $raw_custom_fields['regulation'] ) : array();
+$current_platforms     = isset( $raw_custom_fields['trading_platforms'] ) ? array_map( 'sanitize_text_field', (array) $raw_custom_fields['trading_platforms'] ) : array();
+$current_spreads       = isset( $raw_custom_fields['spreads_from'] ) ? array_map( 'sanitize_text_field', (array) $raw_custom_fields['spreads_from'] ) : array();
+$current_account_types = isset( $raw_custom_fields['account_type'] ) ? array_map( 'sanitize_text_field', (array) $raw_custom_fields['account_type'] ) : array();
+$current_deposit_raw   = isset( $raw_custom_fields['min_deposit'] ) ? sanitize_text_field( $raw_custom_fields['min_deposit'] ) : '';
+
+if ( $current_deposit_raw && strpos( $current_deposit_raw, '-' ) !== false ) {
+	$_parts = array_map( 'intval', explode( '-', $current_deposit_raw, 2 ) );
+	$current_deposit_min = $_parts[0];
+	$current_deposit_max = isset( $_parts[1] ) ? $_parts[1] : $deposit_max;
+} else {
+	$current_deposit_min = $deposit_min;
+	$current_deposit_max = $deposit_max;
+}
+
+$current_radius       = isset( $_GET['search_radius'] ) ? (int) $_GET['search_radius'] : 50;
+$current_verified_only = ! empty( $_GET['verified_only'] ) ? 1 : 0;
 
 // Sort & View data
 $sort_by_links = $listings->get_sort_by_link_list();
@@ -266,9 +308,13 @@ $view_as_links = $listings->get_view_as_link_list();
             </svg>
           </div>
           <div class="pwdev-filter-section__content">
-            <?php foreach ( $regulation_values as $reg_label => $reg_count ) : ?>
-            <label class="pwdev-filter-option">
-              <span class="pwdev-filter-option__checkbox"></span>
+            <?php foreach ( $regulation_values as $reg_label => $reg_count ) :
+              $is_reg_checked = in_array( $reg_label, $current_regulations );
+            ?>
+            <label class="pwdev-filter-option"
+                   data-filter-type="regulation"
+                   data-filter-value="<?php echo esc_attr( $reg_label ); ?>">
+              <span class="pwdev-filter-option__checkbox<?php echo $is_reg_checked ? ' checked' : ''; ?>"></span>
               <span class="pwdev-filter-option__label"><?php echo esc_html( $reg_label ); ?></span>
               <span class="pwdev-filter-option__count"><?php echo esc_html( $reg_count ); ?></span>
             </label>
@@ -287,9 +333,13 @@ $view_as_links = $listings->get_view_as_link_list();
             </svg>
           </div>
           <div class="pwdev-filter-section__content">
-            <?php foreach ( $trading_platform_values as $tp_label => $tp_count ) : ?>
-            <label class="pwdev-filter-option">
-              <span class="pwdev-filter-option__checkbox"></span>
+            <?php foreach ( $trading_platform_values as $tp_label => $tp_count ) :
+              $is_tp_checked = in_array( $tp_label, $current_platforms );
+            ?>
+            <label class="pwdev-filter-option"
+                   data-filter-type="trading_platforms"
+                   data-filter-value="<?php echo esc_attr( $tp_label ); ?>">
+              <span class="pwdev-filter-option__checkbox<?php echo $is_tp_checked ? ' checked' : ''; ?>"></span>
               <span class="pwdev-filter-option__label"><?php echo esc_html( $tp_label ); ?></span>
               <span class="pwdev-filter-option__count"><?php echo esc_html( $tp_count ); ?></span>
             </label>
@@ -307,16 +357,29 @@ $view_as_links = $listings->get_view_as_link_list();
             </svg>
           </div>
           <div class="pwdev-filter-section__content">
-            <div class="pwdev-range-slider">
+            <?php
+            $dep_range = $deposit_max - $deposit_min;
+            $dep_min_pct = $dep_range > 0 ? round( ( ( $current_deposit_min - $deposit_min ) / $dep_range ) * 100 ) : 0;
+            $dep_max_pct = $dep_range > 0 ? round( ( ( $current_deposit_max - $deposit_min ) / $dep_range ) * 100 ) : 100;
+            ?>
+            <div class="pwdev-range-slider"
+                 data-slider-type="deposit"
+                 data-min="<?php echo esc_attr( $deposit_min ); ?>"
+                 data-max="<?php echo esc_attr( $deposit_max ); ?>"
+                 data-current-min="<?php echo esc_attr( $current_deposit_min ); ?>"
+                 data-current-max="<?php echo esc_attr( $current_deposit_max ); ?>"
+                 data-prefix="$">
               <div class="pwdev-range-slider__track">
-                <div class="pwdev-range-slider__fill" style="left: 0%; width: 100%;"></div>
-                <div class="pwdev-range-slider__thumb" style="left: 0%;"></div>
-                <div class="pwdev-range-slider__thumb" style="left: 100%;"></div>
+                <div class="pwdev-range-slider__fill" style="left:<?php echo (int)$dep_min_pct; ?>%;width:<?php echo (int)($dep_max_pct - $dep_min_pct); ?>%;"></div>
+                <div class="pwdev-range-slider__thumb pwdev-range-slider__thumb--min" style="left:<?php echo (int)$dep_min_pct; ?>;" data-thumb="min"></div>
+                <div class="pwdev-range-slider__thumb pwdev-range-slider__thumb--max" style="left:<?php echo (int)$dep_max_pct; ?>%;" data-thumb="max"></div>
               </div>
               <div class="pwdev-range-slider__values">
-                <span>$0</span>
-                <span>$10,000</span>
+                <span class="pwdev-range-slider__value--min">$<?php echo number_format( $current_deposit_min ); ?></span>
+                <span class="pwdev-range-slider__value--max">$<?php echo number_format( $current_deposit_max ); ?></span>
               </div>
+              <input type="hidden" class="pwdev-range-slider__input-min" value="<?php echo esc_attr( $current_deposit_min ); ?>">
+              <input type="hidden" class="pwdev-range-slider__input-max" value="<?php echo esc_attr( $current_deposit_max ); ?>">
             </div>
           </div>
         </div>
@@ -331,9 +394,13 @@ $view_as_links = $listings->get_view_as_link_list();
             </svg>
           </div>
           <div class="pwdev-filter-section__content">
-            <?php foreach ( $spreads_from_values as $sf_label => $sf_count ) : ?>
-            <label class="pwdev-filter-option">
-              <span class="pwdev-filter-option__checkbox"></span>
+            <?php foreach ( $spreads_from_values as $sf_label => $sf_count ) :
+              $is_sf_checked = in_array( $sf_label, $current_spreads );
+            ?>
+            <label class="pwdev-filter-option"
+                   data-filter-type="spreads_from"
+                   data-filter-value="<?php echo esc_attr( $sf_label ); ?>">
+              <span class="pwdev-filter-option__checkbox<?php echo $is_sf_checked ? ' checked' : ''; ?>"></span>
               <span class="pwdev-filter-option__label"><?php echo esc_html( $sf_label ); ?></span>
               <span class="pwdev-filter-option__count"><?php echo esc_html( $sf_count ); ?></span>
             </label>
@@ -351,22 +418,21 @@ $view_as_links = $listings->get_view_as_link_list();
             </svg>
           </div>
           <div class="pwdev-filter-section__content">
-            <label class="pwdev-filter-option">
-              <span class="pwdev-filter-option__checkbox"></span>
-              <span class="pwdev-filter-option__label">Standard</span>
+            <?php
+            $acct_options = ! empty( $account_type_values )
+                ? $account_type_values
+                : array( 'Standard' => 0, 'ECN / Raw' => 0, 'Islamic' => 0, 'Demo' => 0 );
+            foreach ( $acct_options as $at_label => $at_count ) :
+              $is_at_checked = in_array( $at_label, $current_account_types );
+            ?>
+            <label class="pwdev-filter-option"
+                   data-filter-type="account_type"
+                   data-filter-value="<?php echo esc_attr( $at_label ); ?>">
+              <span class="pwdev-filter-option__checkbox<?php echo $is_at_checked ? ' checked' : ''; ?>"></span>
+              <span class="pwdev-filter-option__label"><?php echo esc_html( $at_label ); ?></span>
+              <?php if ( $at_count > 0 ) : ?><span class="pwdev-filter-option__count"><?php echo esc_html( $at_count ); ?></span><?php endif; ?>
             </label>
-            <label class="pwdev-filter-option">
-              <span class="pwdev-filter-option__checkbox"></span>
-              <span class="pwdev-filter-option__label">ECN / Raw</span>
-            </label>
-            <label class="pwdev-filter-option">
-              <span class="pwdev-filter-option__checkbox"></span>
-              <span class="pwdev-filter-option__label">Islamic</span>
-            </label>
-            <label class="pwdev-filter-option">
-              <span class="pwdev-filter-option__checkbox"></span>
-              <span class="pwdev-filter-option__label">Demo</span>
-            </label>
+            <?php endforeach; ?>
           </div>
         </div>
         
@@ -429,15 +495,21 @@ $view_as_links = $listings->get_view_as_link_list();
             <span style="font-size: 0.75rem; color: #dc2626;">50 mi</span>
           </div>
           <div class="pwdev-filter-section__content">
-            <div class="pwdev-range-slider">
+            <div class="pwdev-range-slider"
+                 data-slider-type="radius"
+                 data-min="0"
+                 data-max="100"
+                 data-current-max="<?php echo esc_attr( $current_radius ); ?>"
+                 data-suffix=" mi">
               <div class="pwdev-range-slider__track">
-                <div class="pwdev-range-slider__fill" style="left: 0%; width: 50%;"></div>
-                <div class="pwdev-range-slider__thumb" style="left: 50%;"></div>
+                <div class="pwdev-range-slider__fill" style="left:0%;width:<?php echo esc_attr( min(100,$current_radius) ); ?>%;"></div>
+                <div class="pwdev-range-slider__thumb pwdev-range-slider__thumb--max" style="left:<?php echo esc_attr( min(100,$current_radius) ); ?>;" data-thumb="max"></div>
               </div>
               <div class="pwdev-range-slider__values">
                 <span>0 mi</span>
-                <span>100 mi</span>
+                <span class="pwdev-range-slider__value--max"><?php echo esc_html( $current_radius ); ?> mi</span>
               </div>
+              <input type="hidden" class="pwdev-range-slider__input-max" value="<?php echo esc_attr( $current_radius ); ?>">
             </div>
             <label class="pwdev-filter-option" style="margin-top: 0.5rem;">
               <span class="pwdev-filter-option__checkbox"></span>
@@ -446,10 +518,10 @@ $view_as_links = $listings->get_view_as_link_list();
           </div>
         </div>
         
-        <!-- Verified Only Toggle (Static) -->
+        <!-- Verified Only Toggle -->
         <div class="pwdev-toggle-wrapper">
           <span class="pwdev-toggle-label">Verified Only</span>
-          <div class="pwdev-toggle active" data-filter-type="verifiedOnly">
+          <div class="pwdev-toggle<?php echo $current_verified_only ? ' active' : ''; ?>" data-filter-type="verifiedOnly">
             <div class="pwdev-toggle__knob"></div>
           </div>
         </div>
@@ -742,17 +814,63 @@ $view_as_links = $listings->get_view_as_link_list();
             </svg>
           </div>
           <div class="pwdev-filter-section__content">
-            <?php foreach ( $regulation_values as $reg_label => $reg_count ) : ?>
-            <label class="pwdev-filter-option">
-              <span class="pwdev-filter-option__checkbox"></span>
+            <?php foreach ( $regulation_values as $reg_label => $reg_count ) :
+              $is_modal_reg = in_array( $reg_label, $current_regulations );
+            ?>
+            <label class="pwdev-filter-option"
+                   data-filter-type="regulation"
+                   data-filter-value="<?php echo esc_attr( $reg_label ); ?>">
+              <span class="pwdev-filter-option__checkbox<?php echo $is_modal_reg ? ' checked' : ''; ?>"></span>
               <span class="pwdev-filter-option__label"><?php echo esc_html( $reg_label ); ?></span>
             </label>
             <?php endforeach; ?>
-            <!-- More options -->
           </div>
         </div>
         <?php endif; ?>
-        <!-- ... other mobile filters ... -->
+        <?php if ( ! empty( $trading_platform_values ) ) : ?>
+        <div class="pwdev-filter-section">
+          <div class="pwdev-filter-section__header">
+            <h3 class="pwdev-filter-section__title">Trading Platforms</h3>
+            <svg class="pwdev-filter-section__toggle" width="16" height="16" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path d="m6 9 6 6 6-6"/>
+            </svg>
+          </div>
+          <div class="pwdev-filter-section__content">
+            <?php foreach ( $trading_platform_values as $tp_label => $tp_count ) :
+              $is_modal_tp = in_array( $tp_label, $current_platforms );
+            ?>
+            <label class="pwdev-filter-option"
+                   data-filter-type="trading_platforms"
+                   data-filter-value="<?php echo esc_attr( $tp_label ); ?>">
+              <span class="pwdev-filter-option__checkbox<?php echo $is_modal_tp ? ' checked' : ''; ?>"></span>
+              <span class="pwdev-filter-option__label"><?php echo esc_html( $tp_label ); ?></span>
+            </label>
+            <?php endforeach; ?>
+          </div>
+        </div>
+        <?php endif; ?>
+        <div class="pwdev-filter-section">
+          <div class="pwdev-filter-section__header">
+            <h3 class="pwdev-filter-section__title">Account Type</h3>
+            <svg class="pwdev-filter-section__toggle" width="16" height="16" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path d="m6 9 6 6 6-6"/>
+            </svg>
+          </div>
+          <div class="pwdev-filter-section__content">
+            <?php
+            $modal_acct = ! empty( $account_type_values ) ? $account_type_values : array( 'Standard' => 0, 'ECN / Raw' => 0, 'Islamic' => 0, 'Demo' => 0 );
+            foreach ( $modal_acct as $mat_label => $mat_count ) :
+              $is_modal_at = in_array( $mat_label, $current_account_types );
+            ?>
+            <label class="pwdev-filter-option"
+                   data-filter-type="account_type"
+                   data-filter-value="<?php echo esc_attr( $mat_label ); ?>">
+              <span class="pwdev-filter-option__checkbox<?php echo $is_modal_at ? ' checked' : ''; ?>"></span>
+              <span class="pwdev-filter-option__label"><?php echo esc_html( $mat_label ); ?></span>
+            </label>
+            <?php endforeach; ?>
+          </div>
+        </div>
       </div>
       <div class="pwdev-filter-modal__footer">
         <button class="pwdev-filters__apply">Apply Filters</button>

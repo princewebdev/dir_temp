@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * The template for displaying dynamic Directorist single listings.
  */
@@ -34,14 +34,36 @@ if ( have_posts() ) :
 		} else {
 			$review_count = get_comments_number( $listing_id );
 		}
+		$normalized_rating = max( 0, min( 5, (float) $average_rating ) );
 
 		// Category Data
-		$categories    = get_the_terms( $listing_id, ATBDP_CATEGORY );
+		$categories = get_the_terms( $listing_id, ATBDP_CATEGORY );
+		if ( empty( $categories ) || is_wp_error( $categories ) ) {
+			$categories = get_the_terms( $listing_id, 'at_biz_dir-category' );
+		}
 		$category_name = ! empty( $categories ) && ! is_wp_error( $categories ) ? $categories[0]->name : '';
+		$category_url  = ! empty( $categories ) && ! is_wp_error( $categories ) ? get_term_link( $categories[0] ) : '';
+
+		$post_type_object = get_post_type_object( get_post_type( $listing_id ) );
+		$directory_label  = ( $post_type_object && ! empty( $post_type_object->labels->name ) ) ? $post_type_object->labels->name : __( 'Directory', 'theme-reporter-child' );
+		$directory_url    = get_post_type_archive_link( 'at_biz_dir' );
 
 		// Location Data
-		$locations  = get_the_terms( $listing_id, ATBDP_LOCATION );
-		$loc_name   = ! empty( $locations ) && ! is_wp_error( $locations ) ? $locations[0]->name : '';
+		$locations = get_the_terms( $listing_id, ATBDP_LOCATION );
+		if ( empty( $locations ) || is_wp_error( $locations ) ) {
+			$locations = get_the_terms( $listing_id, 'at_biz_dir-location' );
+		}
+		$loc_name = '';
+		if ( ! empty( $locations ) && ! is_wp_error( $locations ) ) {
+			$loc_name = $locations[0]->name;
+			foreach ( $locations as $location_term ) {
+				if ( 'bali' === strtolower( $location_term->slug ) || 'bali' === strtolower( $location_term->name ) ) {
+					$loc_name = $location_term->name;
+					break;
+				}
+			}
+		}
+		$display_location = $loc_name ? $loc_name : $address;
 
 		// Tags
 		$tags = get_the_terms( $listing_id, ATBDP_TAGS );
@@ -89,8 +111,56 @@ if ( have_posts() ) :
 
 		// Social Links (serialized array of {id, url})
 		$social_links = get_post_meta( $listing_id, '_social', true );
+		$linkedin_url = '';
+		$twitter_url  = '';
+		$facebook_url = '';
+		$youtube_url  = '';
+		$instagram_url = '';
+		$whatsapp_url = '';
+		$telegram_url = '';
+		$skype_url    = '';
 
-		// Business Hours — '_disable_bz_hour_listing' is the correct plugin meta key.
+		if ( ! empty( $social_links ) && is_array( $social_links ) ) {
+			foreach ( $social_links as $social_item ) {
+				$social_id  = isset( $social_item['id'] ) ? sanitize_key( $social_item['id'] ) : '';
+				$social_url = isset( $social_item['url'] ) ? $social_item['url'] : ( isset( $social_item['content'] ) ? $social_item['content'] : '' );
+				$social_url = esc_url_raw( $social_url );
+
+				if ( empty( $social_id ) || empty( $social_url ) ) {
+					continue;
+				}
+
+				switch ( $social_id ) {
+					case 'linkedin':
+						$linkedin_url = $social_url;
+						break;
+					case 'twitter':
+					case 'x':
+						$twitter_url = $social_url;
+						break;
+					case 'facebook':
+						$facebook_url = $social_url;
+						break;
+					case 'youtube':
+						$youtube_url = $social_url;
+						break;
+					case 'instagram':
+						$instagram_url = $social_url;
+						break;
+					case 'whatsapp':
+						$whatsapp_url = $social_url;
+						break;
+					case 'telegram':
+						$telegram_url = $social_url;
+						break;
+					case 'skype':
+						$skype_url = $social_url;
+						break;
+				}
+			}
+		}
+
+		// Business Hours - '_disable_bz_hour_listing' is the correct plugin meta key.
 		// A truthy value means the owner has explicitly disabled business hours for this listing.
 		$disable_bz_hour = get_post_meta( $listing_id, '_disable_bz_hour_listing', true );
 		$bdbh            = get_post_meta( $listing_id, '_bdbh', true );
@@ -103,31 +173,25 @@ if ( have_posts() ) :
 		$manual_lng = get_post_meta( $listing_id, '_manual_lng', true );
 		?>
 
-		<body <?php body_class( 'pwdev-page-profile' ); ?>>
-
 			<nav class="pwdev-breadcrumb" aria-label="Breadcrumb">
 				<div class="pwdev-container">
 					<ol class="pwdev-breadcrumb__list">
 						<li class="pwdev-breadcrumb__item">
-							<a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="pwdev-breadcrumb__link">
-								<svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-									<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
-								</svg>
-							</a>
+							<a href="<?php echo esc_url( $directory_url ); ?>" class="pwdev-breadcrumb__link"><?php echo esc_html( $directory_label ); ?></a>
 						</li>
-						<li class="pwdev-breadcrumb__separator">›</li>
+						<li class="pwdev-breadcrumb__separator">&rsaquo;</li>
 						<li class="pwdev-breadcrumb__item">
-							<a href="<?php echo esc_url( get_post_type_archive_link( 'at_biz_dir' ) ); ?>" class="pwdev-breadcrumb__link">Directory</a>
+							<?php if ( $category_name && $category_url && ! is_wp_error( $category_url ) ) : ?>
+								<a href="<?php echo esc_url( $category_url ); ?>" class="pwdev-breadcrumb__link"><?php echo esc_html( $category_name ); ?></a>
+							<?php else : ?>
+								<span class="pwdev-breadcrumb__link"><?php echo esc_html( $category_name ); ?></span>
+							<?php endif; ?>
 						</li>
-						<li class="pwdev-breadcrumb__separator">›</li>
-						<li class="pwdev-breadcrumb__item">
-							<a href="#" class="pwdev-breadcrumb__link"><?php echo esc_html( $category_name ); ?>s</a>
-						</li>
-						<li class="pwdev-breadcrumb__separator">›</li>
+						<li class="pwdev-breadcrumb__separator">&rsaquo;</li>
 						<li class="pwdev-breadcrumb__item pwdev-breadcrumb__item--current"><?php the_title(); ?></li>
 					</ol>
 					<a href="javascript:history.back()" class="pwdev-breadcrumb__back">
-						<svg width="14" height="14" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+						<svg width="14" height="14" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#111827" stroke-width="2">
 							<path d="M19 12H5M12 19l-7-7 7-7"/>
 						</svg>
 						Back to Results
@@ -171,7 +235,7 @@ if ( have_posts() ) :
 								
 								<?php if ( $is_verified ) : ?>
 								<span class="pwdev-verification-badge pwdev-verification-badge--verified">
-									<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+									<svg width="14" height="14" viewBox="0 0 24 24" fill="#111827">
 										<path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
 									</svg>
 									Verified
@@ -187,39 +251,39 @@ if ( have_posts() ) :
 									<div class="pwdev-card__stars">
 										<?php 
 										for ( $i = 1; $i <= 5; $i++ ) {
-											$class = ( $i <= $average_rating ) ? '' : 'empty';
-											$symbol = ( $i <= $average_rating ) ? '★' : '☆';
+											$class = ( $i <= $normalized_rating ) ? '' : 'empty';
+											$symbol = ( $i <= $normalized_rating ) ? '&#9733;' : '&#9734;';
 											echo '<span class="pwdev-card__star ' . $class . '">' . $symbol . '</span>';
 										}
 										?>
 									</div>
 									<span class="pwdev-profile-hero__reviews">(<?php echo esc_html( $review_count ); ?> reviews)</span>
 								</div>
-								<span class="pwdev-profile-hero__separator">·</span>
+								<span class="pwdev-profile-hero__separator">&middot;</span>
 								<span class="pwdev-profile-hero__type"><?php echo esc_html( $category_name ); ?></span>
-								<span class="pwdev-profile-hero__separator">·</span>
+								<span class="pwdev-profile-hero__separator">&middot;</span>
 								<span class="pwdev-profile-hero__location">
-									<svg width="14" height="14" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+									<svg width="14" height="14" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#111827" stroke-width="2">
 										<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
 									</svg>
-									<?php echo esc_html( $address ); ?>
+									<?php echo esc_html( $display_location ); ?>
 								</span>
 							</div>
 						</div>
 						<div class="pwdev-profile-hero__actions">
 							<button class="pwdev-btn pwdev-btn--primary pwdev-btn--lg">More Info</button>
 							<button class="pwdev-btn pwdev-btn--icon" aria-label="Share">
-								<svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+								<svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#111827" stroke-width="2">
 									<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
 								</svg>
 							</button>
 							<button class="pwdev-btn pwdev-btn--icon" aria-label="Bookmark">
-								<svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+								<svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#111827" stroke-width="2">
 									<path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
 								</svg>
 							</button>
 							<button class="pwdev-btn pwdev-btn--icon" aria-label="Report">
-								<svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+								<svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#111827" stroke-width="2">
 									<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/>
 								</svg>
 							</button>
@@ -238,7 +302,7 @@ if ( have_posts() ) :
 									
 									<div class="pwdev-overview-item">
 										<div class="pwdev-overview-item__icon">
-											<svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+											<svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#111827" stroke-width="2">
 												<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
 											</svg>
 										</div>
@@ -250,7 +314,7 @@ if ( have_posts() ) :
 
 									<div class="pwdev-overview-item">
 										<div class="pwdev-overview-item__icon">
-											<svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+											<svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#111827" stroke-width="2">
 												<rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
 											</svg>
 										</div>
@@ -262,7 +326,7 @@ if ( have_posts() ) :
 
 									<div class="pwdev-overview-item">
 										<div class="pwdev-overview-item__icon">
-											<svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+											<svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#111827" stroke-width="2">
 												<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
 											</svg>
 										</div>
@@ -274,7 +338,7 @@ if ( have_posts() ) :
 
 									<div class="pwdev-overview-item">
 										<div class="pwdev-overview-item__icon">
-											<svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+											<svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#111827" stroke-width="2">
 												<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
 											</svg>
 										</div>
@@ -286,7 +350,7 @@ if ( have_posts() ) :
 
 									<div class="pwdev-overview-item">
 										<div class="pwdev-overview-item__icon">
-											<svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+											<svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#111827" stroke-width="2">
 												<path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
 											</svg>
 										</div>
@@ -298,7 +362,7 @@ if ( have_posts() ) :
 
 									<div class="pwdev-overview-item">
 										<div class="pwdev-overview-item__icon">
-											<svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+											<svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#111827" stroke-width="2">
 												<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
 											</svg>
 										</div>
@@ -310,7 +374,7 @@ if ( have_posts() ) :
 
 									<div class="pwdev-overview-item">
 										<div class="pwdev-overview-item__icon">
-											<svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+											<svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#111827" stroke-width="2">
 												<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
 											</svg>
 										</div>
@@ -332,7 +396,7 @@ if ( have_posts() ) :
 
 									<div class="pwdev-overview-item">
 										<div class="pwdev-overview-item__icon">
-											<svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+											<svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#111827" stroke-width="2">
 												<rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
 											</svg>
 										</div>
@@ -354,7 +418,7 @@ if ( have_posts() ) :
 
 									<div class="pwdev-overview-item">
 										<div class="pwdev-overview-item__icon">
-											<svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+											<svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#111827" stroke-width="2">
 												<rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>
 											</svg>
 										</div>
@@ -366,7 +430,7 @@ if ( have_posts() ) :
 
 									<div class="pwdev-overview-item">
 										<div class="pwdev-overview-item__icon">
-											<svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+											<svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#111827" stroke-width="2">
 												<path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
 											</svg>
 										</div>
@@ -378,7 +442,7 @@ if ( have_posts() ) :
 
 									<div class="pwdev-overview-item">
 										<div class="pwdev-overview-item__icon">
-											<svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+											<svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#111827" stroke-width="2">
 												<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
 											</svg>
 										</div>
@@ -390,7 +454,7 @@ if ( have_posts() ) :
 
 									<div class="pwdev-overview-item">
 										<div class="pwdev-overview-item__icon">
-											<svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+											<svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#111827" stroke-width="2">
 												<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
 											</svg>
 										</div>
@@ -413,9 +477,9 @@ if ( have_posts() ) :
 								<h2 class="pwdev-profile-section__title"><?php the_title(); ?> Review <?php echo date('Y'); ?></h2>
 								<div class="pwdev-profile-section__meta">
 									<span class="pwdev-author">By <strong><?php echo get_the_author(); ?></strong></span>
-									<span class="separator">·</span>
+									<span class="pwdev-separator">&middot;</span>
 									<span class="pwdev-date">Updated <?php the_modified_date('M j, Y'); ?></span>
-									<span class="separator">·</span>
+									<span class="pwdev-separator">&middot;</span>
 									<span class="pwdev-read-time">8 min read</span>
 								</div>
 								
@@ -431,29 +495,39 @@ if ( have_posts() ) :
 							<section class="pwdev-profile-section">
 								<div class="pwdev-profile-section__header">
 									<h2 class="pwdev-profile-section__title">Press Releases</h2>
-									<a href="#" class="pwdev-profile-section__link">View All</a>
+									<a href="<?php echo esc_url( get_post_type_archive_link( 'post' ) ); ?>" class="pwdev-profile-section__link">View All</a>
 								</div>
 								<div class="pwdev-press-releases">
-									<article class="pwdev-press-release">
-										<img src="https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=80&h=80&fit=crop" alt="" class="pwdev-press-release__image">
-										<div class="pwdev-press-release__content">
-											<h4 class="pwdev-press-release__title"><?php the_title(); ?> Reports Record Q4 Revenue Amid Growing Retail Trading Volumes</h4>
-											<div class="pwdev-press-release__meta">
-												<span>Feb 15, 2025</span>
-												<span class="pwdev-press-release__tag">Earnings</span>
-											</div>
-										</div>
-									</article>
-									<article class="pwdev-press-release">
-										<img src="https://images.unsplash.com/photo-1579532537598-459ecdaf39cc?w=80&h=80&fit=crop" alt="" class="pwdev-press-release__image">
-										<div class="pwdev-press-release__content">
-											<h4 class="pwdev-press-release__title"><?php the_title(); ?> Launches New ESG Indices for Sustainable Investing</h4>
-											<div class="pwdev-press-release__meta">
-												<span>Jan 30, 2025</span>
-												<span class="pwdev-press-release__tag">Product</span>
-											</div>
-										</div>
-									</article>
+									<?php
+									$press_query = new WP_Query(
+										array(
+											'post_type'      => 'post',
+											'posts_per_page' => 4,
+											'post_status'    => 'publish',
+											'orderby'        => 'date',
+											'order'          => 'DESC',
+										)
+									);
+									?>
+									<?php if ( $press_query->have_posts() ) : ?>
+										<?php while ( $press_query->have_posts() ) : $press_query->the_post(); ?>
+											<article class="pwdev-press-release">
+												<?php if ( has_post_thumbnail() ) : ?>
+													<?php the_post_thumbnail( 'thumbnail', array( 'class' => 'pwdev-press-release__image' ) ); ?>
+												<?php else : ?>
+													<img src="https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=80&h=80&fit=crop" alt="" class="pwdev-press-release__image">
+												<?php endif; ?>
+												<div class="pwdev-press-release__content">
+													<h4 class="pwdev-press-release__title"><?php the_title(); ?></h4>
+													<div class="pwdev-press-release__meta">
+														<span><?php echo esc_html( get_the_date( 'M j, Y' ) ); ?></span>
+														<span class="pwdev-press-release__tag"><?php echo esc_html( get_the_category() ? get_the_category()[0]->name : 'News' ); ?></span>
+													</div>
+												</div>
+											</article>
+										<?php endwhile; ?>
+										<?php wp_reset_postdata(); ?>
+									<?php endif; ?>
 								</div>
 							</section>
 
@@ -510,7 +584,7 @@ if ( have_posts() ) :
 										</iframe>
 									</div>
 									<p class="pwdev-video-caption">
-										<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+										<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#111827" stroke-width="2">
 											<polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
 										</svg>
 										<?php the_title(); ?> Platform Tour & Trading Features
@@ -527,14 +601,19 @@ if ( have_posts() ) :
 										<div class="pwdev-card__stars pwdev-card__stars--lg">
 											<?php 
 											for ( $i = 1; $i <= 5; $i++ ) {
-												$class = ( $i <= $average_rating ) ? '' : 'empty';
-												echo '<span class="pwdev-card__star ' . $class . '">★</span>';
+												$class = ( $i <= $normalized_rating ) ? '' : 'empty';
+												echo '<span class="pwdev-card__star ' . $class . '">' . ( $class ? '&#9734;' : '&#9733;' ) . '</span>';
 											}
 											?>
 										</div>
 									</div>
 									<span class="pwdev-reviews-summary__count">Based on <?php echo esc_html( $review_count ); ?> Reviews</span>
 								</div>
+								<?php if ( function_exists( 'directorist_is_review_enabled' ) && directorist_is_review_enabled() ) : ?>
+								<div class="pwdev-directorist-reviews">
+									<?php comments_template(); ?>
+								</div>
+								<?php endif; ?>
 							</section>
 
 							<section class="pwdev-profile-section">
@@ -542,7 +621,7 @@ if ( have_posts() ) :
 								<div class="pwdev-location-map">
 									<div class="pwdev-location-map__embed">
 										<iframe 
-											src="https://maps.google.com/maps?q=<?php echo urlencode($address); ?>&t=&z=13&ie=UTF8&iwloc=&output=embed" 
+											src="https://maps.google.com/maps?q=<?php echo urlencode( $address ? $address : $display_location ); ?>&t=&z=13&ie=UTF8&iwloc=&output=embed" 
 											width="100%" 
 											height="300" 
 											style="border:0; border-radius: 8px;" 
@@ -553,14 +632,14 @@ if ( have_posts() ) :
 									</div>
 									<div class="pwdev-location-details">
 										<p class="pwdev-location-details__address">
-											<svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+											<svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#111827" stroke-width="2">
 												<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
 											</svg>
-											<?php echo esc_html( $address ); ?>
+											<?php echo esc_html( $display_location ); ?>
 										</p>
-										<a href="https://www.google.com/maps/search/?api=1&query=<?php echo urlencode($address); ?>" target="_blank" rel="noopener" class="pwdev-location-details__link">
+										<a href="https://www.google.com/maps/search/?api=1&query=<?php echo urlencode( $display_location ); ?>" target="_blank" rel="noopener" class="pwdev-location-details__link">
 											Open in Google Maps
-											<svg width="14" height="14" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+											<svg width="14" height="14" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#111827" stroke-width="2">
 												<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
 											</svg>
 										</a>
@@ -580,7 +659,7 @@ if ( have_posts() ) :
 										<div class="pwdev-faq-item">
 											<button class="pwdev-faq-item__question">
 												<span><?php echo esc_html( $faq_question ); ?></span>
-												<svg class="pwdev-faq-item__icon" width="16" height="16" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+												<svg class="pwdev-faq-item__icon" width="16" height="16" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#111827" stroke-width="2">
 													<path d="m6 9 6 6 6-6"/>
 												</svg>
 											</button>
@@ -595,12 +674,24 @@ if ( have_posts() ) :
 						</div>
 
 						<aside class="pwdev-profile-sidebar">
+						<?php
+						// Claim Listing: include the DCL plugin template if the plugin is active.
+						// The template handles all its own permission/status checks internally.
+						if ( defined( 'DCL_TEMPLATES_DIR' ) && file_exists( DCL_TEMPLATES_DIR . 'claim-listing-template.php' ) ) {
+							$field_data = array(
+								'custom_block_classes' => '',
+								'icon'                 => 'uil uil-check-circle',
+								'label'                => __( 'Claim Listing', 'directorist-claim-listing' ),
+							);
+							include DCL_TEMPLATES_DIR . 'claim-listing-template.php';
+						}
+						?>
 							<div class="pwdev-sidebar-card">
 								<h3 class="pwdev-sidebar-card__title">Contact Information</h3>
 								<ul class="pwdev-contact-list">
 									<?php if ( $phone ) : ?>
 									<li class="pwdev-contact-list__item">
-										<svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+										<svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#111827" stroke-width="2">
 											<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
 										</svg>
 										<span><?php echo esc_html( $phone ); ?></span>
@@ -609,7 +700,7 @@ if ( have_posts() ) :
 
 									<?php if ( $email ) : ?>
 									<li class="pwdev-contact-list__item">
-										<svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+										<svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#111827" stroke-width="2">
 											<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
 										</svg>
 										<a href="mailto:<?php echo esc_attr($email); ?>"><?php echo esc_html($email); ?></a>
@@ -618,7 +709,7 @@ if ( have_posts() ) :
 
 									<?php if ( $website ) : ?>
 									<li class="pwdev-contact-list__item">
-										<svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+										<svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#111827" stroke-width="2">
 											<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
 										</svg>
 										<a href="<?php echo esc_url($website); ?>" target="_blank" rel="noopener"><?php echo esc_html( parse_url($website, PHP_URL_HOST) ); ?></a>
@@ -626,15 +717,15 @@ if ( have_posts() ) :
 									<?php endif; ?>
 
 									<li class="pwdev-contact-list__item">
-										<svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+										<svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#111827" stroke-width="2">
 											<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
 										</svg>
-										<span><?php echo esc_html( $address ); ?></span>
+										<span><?php echo esc_html( $display_location ); ?></span>
 									</li>
 								</ul>
 								<?php if ( $website ) : ?>
 								<a href="<?php echo esc_url($website); ?>" target="_blank" rel="noopener" class="pwdev-btn pwdev-btn--dark pwdev-btn--block">
-									<svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+									<svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#111827" stroke-width="2">
 										<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
 									</svg>
 									Visit Website
@@ -642,25 +733,74 @@ if ( have_posts() ) :
 								<?php endif; ?>
 							</div>
 
+							<?php if ( $linkedin_url || $twitter_url || $facebook_url || $youtube_url || $instagram_url || $whatsapp_url || $telegram_url || $skype_url ) : ?>
 							<div class="pwdev-sidebar-card">
 								<h3 class="pwdev-sidebar-card__title">Social & Messengers</h3>
-								<?php 
-								// Directorist stores social as a serialized array of {id, url}
-								if ( ! empty( $social_links ) && is_array( $social_links ) ) : ?>
-									<h4 class="pwdev-sidebar-card__subtitle pwdev-sidebar-card__subtitle--first">Social Media</h4>
-									<div class="pwdev-social-links">
-										<?php foreach ( $social_links as $social_item ) :
-											$social_id  = isset( $social_item['id'] ) ? $social_item['id'] : '';
-											$social_url = isset( $social_item['url'] ) ? $social_item['url'] : '';
-											if ( empty( $social_id ) || empty( $social_url ) ) continue;
-										?>
-											<a href="<?php echo esc_url( $social_url ); ?>" class="pwdev-social-link pwdev-social-link--neutral" aria-label="<?php echo esc_attr( $social_id ); ?>" target="_blank" rel="noopener">
-												<i class="fab fa-<?php echo esc_attr( $social_id ); ?>"></i>
-											</a>
-										<?php endforeach; ?>
-									</div>
+								<?php if ( $linkedin_url || $twitter_url || $facebook_url || $youtube_url || $instagram_url ) : ?>
+								<h4 class="pwdev-sidebar-card__subtitle pwdev-sidebar-card__subtitle--first">Social Media</h4>
+								<div class="pwdev-social-links">
+									<?php if ( $linkedin_url ) : ?>
+									<a href="<?php echo esc_url( $linkedin_url ); ?>" class="pwdev-social-link pwdev-social-link--neutral" aria-label="LinkedIn" target="_blank" rel="noopener">
+										<svg width="18" height="18" viewBox="0 0 24 24" fill="#111827">
+											<path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+										</svg>
+									</a>
+									<?php endif; ?>
+									<?php if ( $twitter_url ) : ?>
+									<a href="<?php echo esc_url( $twitter_url ); ?>" class="pwdev-social-link pwdev-social-link--neutral" aria-label="Twitter" target="_blank" rel="noopener">
+										<svg width="18" height="18" viewBox="0 0 24 24" fill="#111827">
+											<path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+										</svg>
+									</a>
+									<?php endif; ?>
+									<?php if ( $facebook_url ) : ?>
+									<a href="<?php echo esc_url( $facebook_url ); ?>" class="pwdev-social-link pwdev-social-link--neutral" aria-label="Facebook" target="_blank" rel="noopener">
+										<svg width="18" height="18" viewBox="0 0 24 24" fill="#111827">
+											<path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+										</svg>
+									</a>
+									<?php endif; ?>
+									<?php if ( $youtube_url ) : ?>
+									<a href="<?php echo esc_url( $youtube_url ); ?>" class="pwdev-social-link pwdev-social-link--neutral" aria-label="YouTube" target="_blank" rel="noopener">
+										<svg width="18" height="18" viewBox="0 0 24 24" fill="#111827">
+											<path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+										</svg>
+									</a>
+									<?php endif; ?>
+									<?php if ( $instagram_url ) : ?>
+									<a href="<?php echo esc_url( $instagram_url ); ?>" class="pwdev-social-link pwdev-social-link--neutral" aria-label="Instagram" target="_blank" rel="noopener">
+										<svg width="18" height="18" viewBox="0 0 24 24" fill="#111827">
+											<path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
+										</svg>
+									</a>
+									<?php endif; ?>
+								</div>
+								<?php endif; ?>
+								<?php if ( $whatsapp_url || $telegram_url || $skype_url ) : ?>
+								<h4 class="pwdev-sidebar-card__subtitle">Messengers</h4>
+								<div class="pwdev-messenger-links pwdev-messenger-links--inline">
+									<?php if ( $whatsapp_url ) : ?>
+									<a href="<?php echo esc_url( $whatsapp_url ); ?>" class="pwdev-messenger-link pwdev-messenger-link--whatsapp" target="_blank" rel="noopener">
+										<svg width="16" height="16" viewBox="0 0 24 24" fill="#ffffff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+										WhatsApp
+									</a>
+									<?php endif; ?>
+									<?php if ( $telegram_url ) : ?>
+									<a href="<?php echo esc_url( $telegram_url ); ?>" class="pwdev-messenger-link pwdev-messenger-link--telegram" target="_blank" rel="noopener">
+										<svg width="16" height="16" viewBox="0 0 24 24" fill="#ffffff"><path d="M11.944 0A12 12 0 000 12a12 12 0 0012 12 12 12 0 0012-12A12 12 0 0012 0a12 12 0 00-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 01.171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+										Telegram
+									</a>
+									<?php endif; ?>
+									<?php if ( $skype_url ) : ?>
+									<a href="<?php echo esc_url( $skype_url ); ?>" class="pwdev-messenger-link pwdev-messenger-link--skype" target="_blank" rel="noopener">
+										<svg width="16" height="16" viewBox="0 0 24 24" fill="#ffffff"><path d="M12.069 18.874c-4.023 0-5.82-1.979-5.82-3.464 0-.765.561-1.296 1.333-1.296 1.723 0 1.273 2.477 4.487 2.477 1.641 0 2.55-.895 2.55-1.811 0-.551-.269-1.16-1.354-1.429l-3.576-.895c-2.88-.724-3.403-2.286-3.403-3.751 0-3.047 2.861-4.191 5.549-4.191 2.471 0 5.393 1.373 5.393 3.199 0 .784-.688 1.24-1.453 1.24-1.469 0-1.198-2.037-4.164-2.037-1.469 0-2.292.664-2.292 1.617s1.153 1.258 2.157 1.487l2.637.587c2.891.649 3.624 2.346 3.624 3.944 0 2.476-1.902 4.324-5.722 4.324m11.084-4.882l-.029.135-.044-.24c.015.045.044.074.059.12.12-.675.181-1.363.181-2.052 0-1.529-.301-3.012-.898-4.42-.569-1.348-1.395-2.562-2.427-3.596-1.049-1.033-2.247-1.856-3.595-2.426C15.015.301 13.531 0 12 0c-.534 0-1.057.036-1.569.109-.481-.073-.985-.109-1.485-.109C7.231 0 5.691.475 4.341 1.328A8.902 8.902 0 00.972 5.391 9.04 9.04 0 000 9.042c0 .533.045 1.057.135 1.569-.04.361-.074.734-.074 1.093 0 1.529.301 3.012.898 4.42.569 1.348 1.395 2.562 2.427 3.596 1.049 1.034 2.247 1.857 3.595 2.427 1.405.598 2.889.898 4.419.898.534 0 1.057-.045 1.569-.135.473.074.988.135 1.485.135 1.713 0 3.253-.465 4.603-1.318a8.903 8.903 0 003.369-4.063 9.04 9.04 0 00.972-4.065c0-.52-.045-1.033-.12-1.545"/></svg>
+										Skype
+									</a>
+									<?php endif; ?>
+								</div>
 								<?php endif; ?>
 							</div>
+							<?php endif; ?>
 						<?php if ( ! $disable_bz_hour ) : ?>							<div class="pwdev-sidebar-card">
 								<div class="pwdev-sidebar-card__header">
 									<h3 class="pwdev-sidebar-card__title">Business Hours</h3>
@@ -734,7 +874,7 @@ if ( have_posts() ) :
 
 							<div class="pwdev-sidebar-card pwdev-sidebar-card--claim">
 								<div class="pwdev-sidebar-card__icon">
-									<svg width="32" height="32" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+									<svg width="32" height="32" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#111827" stroke-width="1.5">
 										<path d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z"/>
 									</svg>
 								</div>
@@ -746,28 +886,6 @@ if ( have_posts() ) :
 					</div>
 				</div>
 			</main>
-
-			<script>
-				document.querySelectorAll('.pwdev-faq-item__question').forEach(button => {
-					button.addEventListener('click', () => {
-						const item = button.parentElement;
-						item.classList.toggle('pwdev-faq-item--expanded');
-					});
-				});
-
-				document.querySelectorAll('.pwdev-media-gallery__thumb').forEach(thumb => {
-					thumb.addEventListener('click', () => {
-						const gallery = thumb.closest('.pwdev-media-gallery');
-						const mainImg = gallery.querySelector('.pwdev-media-gallery__main-img');
-						const fullSrc = thumb.dataset.full;
-						if (fullSrc && mainImg) {
-							mainImg.src = fullSrc;
-							gallery.querySelectorAll('.pwdev-media-gallery__thumb').forEach(t => t.classList.remove('pwdev-media-gallery__thumb--active'));
-							thumb.classList.add('pwdev-media-gallery__thumb--active');
-						}
-					});
-				});
-			</script>
 
 		<?php
 	endwhile;
