@@ -64,6 +64,29 @@ $spreads_from_values     = array();
 $min_deposit_values      = array();
 $account_type_values     = array();
 
+$extract_meta_values = static function( $meta_value ) {
+  $meta_value = maybe_unserialize( $meta_value );
+  if ( is_array( $meta_value ) ) {
+    $source = $meta_value;
+  } else {
+    $source = explode( ',', (string) $meta_value );
+  }
+
+  $values = array();
+  foreach ( $source as $item ) {
+    $label = trim( wp_strip_all_tags( (string) $item ) );
+    if ( $label === '' ) {
+      continue;
+    }
+    if ( in_array( strtolower( $label ), array( 'from', 'spreads', 'spreads from', 'regulation', 'platforms', 'methods', 'served' ), true ) ) {
+      continue;
+    }
+    $values[] = $label;
+  }
+
+  return array_values( array_unique( $values ) );
+};
+
 $meta_listings = get_posts( array(
 	'post_type'      => ATBDP_POST_TYPE,
 	'posts_per_page' => -1,
@@ -72,34 +95,37 @@ $meta_listings = get_posts( array(
 ) );
 
 foreach ( $meta_listings as $ml_id ) {
-	$reg = get_post_meta( $ml_id, '_regulation', true );
-	if ( $reg ) {
-		foreach ( array_map( 'trim', explode( ',', $reg ) ) as $r ) {
-			if ( $r !== '' ) $regulation_values[ $r ] = isset( $regulation_values[ $r ] ) ? $regulation_values[ $r ] + 1 : 1;
-		}
-	}
-	$tp = get_post_meta( $ml_id, '_trading_platforms', true );
-	if ( $tp ) {
-		foreach ( array_map( 'trim', explode( ',', $tp ) ) as $t ) {
-			if ( $t !== '' ) $trading_platform_values[ $t ] = isset( $trading_platform_values[ $t ] ) ? $trading_platform_values[ $t ] + 1 : 1;
-		}
-	}
-	$sf = get_post_meta( $ml_id, '_spreads_from', true );
-	if ( $sf ) {
-		$spreads_from_values[ $sf ] = isset( $spreads_from_values[ $sf ] ) ? $spreads_from_values[ $sf ] + 1 : 1;
-	}
-	$md = get_post_meta( $ml_id, '_min_deposit', true );
+  foreach ( $extract_meta_values( get_post_meta( $ml_id, '_custom-checkbox', true ) ) as $r ) {
+    $regulation_values[ $r ] = isset( $regulation_values[ $r ] ) ? $regulation_values[ $r ] + 1 : 1;
+  }
+
+  foreach ( $extract_meta_values( get_post_meta( $ml_id, '_custom-checkbox-2', true ) ) as $t ) {
+    $trading_platform_values[ $t ] = isset( $trading_platform_values[ $t ] ) ? $trading_platform_values[ $t ] + 1 : 1;
+  }
+
+  $spread_candidates = $extract_meta_values( get_post_meta( $ml_id, '_custom-checkbox-6', true ) );
+  if ( empty( $spread_candidates ) ) {
+    $spread_candidates = $extract_meta_values( get_post_meta( $ml_id, '_spreads_from', true ) );
+  }
+  if ( empty( $spread_candidates ) ) {
+    $spread_candidates = $extract_meta_values( get_post_meta( $ml_id, '_custom-text-5', true ) );
+  }
+  foreach ( $spread_candidates as $sf ) {
+    $spreads_from_values[ $sf ] = isset( $spreads_from_values[ $sf ] ) ? $spreads_from_values[ $sf ] + 1 : 1;
+  }
+
+  $md = get_post_meta( $ml_id, '_custom-number-3', true );
+  if ( $md === '' ) {
+    $md = get_post_meta( $ml_id, '_min_deposit', true );
+  }
 	if ( $md !== '' ) {
 		$md_num = (float) preg_replace( '/[^0-9.]/', '', (string) $md );
 		if ( $md_num >= 0 ) {
 			$min_deposit_values[] = $md_num;
 		}
 	}
-	$at = get_post_meta( $ml_id, '_account_type', true );
-	if ( $at ) {
-		foreach ( array_map( 'trim', explode( ',', $at ) ) as $a ) {
-			if ( $a !== '' ) $account_type_values[ $a ] = isset( $account_type_values[ $a ] ) ? $account_type_values[ $a ] + 1 : 1;
-		}
+  foreach ( $extract_meta_values( get_post_meta( $ml_id, '_custom-checkbox-5', true ) ) as $a ) {
+    $account_type_values[ $a ] = isset( $account_type_values[ $a ] ) ? $account_type_values[ $a ] + 1 : 1;
 	}
 }
 arsort( $regulation_values );
@@ -115,7 +141,7 @@ if ( $deposit_max <= $deposit_min ) {
 
 // Search & filter URLs
 $search_page_id = get_directorist_option( 'search_result_page' );
-$search_url     = $search_page_id ? get_permalink( $search_page_id ) : home_url( '/' );
+$search_url     = '';
 
 // Current filter values from URL
 $current_q    = isset( $_GET['q'] ) ? sanitize_text_field( wp_unslash( $_GET['q'] ) ) : '';
@@ -126,12 +152,12 @@ $current_view = ! empty( $_GET['view'] ) ? sanitize_text_field( wp_unslash( $_GE
 $current_rating   = isset( $_GET['search_by_rating'] ) ? (int) $_GET['search_by_rating'] : 0;
 $current_dir_slug = isset( $_GET['directory_type'] ) ? sanitize_text_field( wp_unslash( $_GET['directory_type'] ) ) : '';
 
-// Custom meta field filters from URL (e.g. ?custom_field[regulation][]=FCA)
+// Custom meta field filters from URL.
 $raw_custom_fields     = isset( $_GET['custom_field'] ) && is_array( $_GET['custom_field'] ) ? wp_unslash( $_GET['custom_field'] ) : array();
-$current_regulations   = isset( $raw_custom_fields['regulation'] ) ? array_map( 'sanitize_text_field', (array) $raw_custom_fields['regulation'] ) : array();
-$current_platforms     = isset( $raw_custom_fields['trading_platforms'] ) ? array_map( 'sanitize_text_field', (array) $raw_custom_fields['trading_platforms'] ) : array();
-$current_spreads       = isset( $raw_custom_fields['spreads_from'] ) ? array_map( 'sanitize_text_field', (array) $raw_custom_fields['spreads_from'] ) : array();
-$current_account_types = isset( $raw_custom_fields['account_type'] ) ? array_map( 'sanitize_text_field', (array) $raw_custom_fields['account_type'] ) : array();
+$current_regulations   = isset( $raw_custom_fields['custom-checkbox'] ) ? array_map( 'sanitize_text_field', (array) $raw_custom_fields['custom-checkbox'] ) : ( isset( $raw_custom_fields['regulation'] ) ? array_map( 'sanitize_text_field', (array) $raw_custom_fields['regulation'] ) : array() );
+$current_platforms     = isset( $raw_custom_fields['custom-checkbox-2'] ) ? array_map( 'sanitize_text_field', (array) $raw_custom_fields['custom-checkbox-2'] ) : ( isset( $raw_custom_fields['trading_platforms'] ) ? array_map( 'sanitize_text_field', (array) $raw_custom_fields['trading_platforms'] ) : array() );
+$current_spreads       = isset( $raw_custom_fields['custom-checkbox-6'] ) ? array_map( 'sanitize_text_field', (array) $raw_custom_fields['custom-checkbox-6'] ) : ( isset( $raw_custom_fields['spreads_from'] ) ? array_map( 'sanitize_text_field', (array) $raw_custom_fields['spreads_from'] ) : array() );
+$current_account_types = isset( $raw_custom_fields['custom-checkbox-5'] ) ? array_map( 'sanitize_text_field', (array) $raw_custom_fields['custom-checkbox-5'] ) : ( isset( $raw_custom_fields['account_type'] ) ? array_map( 'sanitize_text_field', (array) $raw_custom_fields['account_type'] ) : array() );
 $current_deposit_raw   = isset( $raw_custom_fields['min_deposit'] ) ? sanitize_text_field( $raw_custom_fields['min_deposit'] ) : '';
 
 if ( $current_deposit_raw && strpos( $current_deposit_raw, '-' ) !== false ) {
@@ -191,7 +217,10 @@ $view_as_links = $listings->get_view_as_link_list();
       <p class="hero__subtitle pwdev-hero__subtitle"><?php esc_html_e( 'Compare brokers, technology providers, and services trusted by the trading industry', 'onelisting' ); ?></p>
       
       <!-- Search Bar -->
-      <form class="search-bar pwdev-search-bar" action="<?php echo esc_url( $search_url ); ?>" method="GET">
+      <form class="search-bar pwdev-search-bar" action="" method="GET">
+        <?php if ( ! empty( $current_dir_slug ) ) : ?>
+          <input type="hidden" name="directory_type" value="<?php echo esc_attr( $current_dir_slug ); ?>">
+        <?php endif; ?>
         <div class="search-bar__input-wrapper pwdev-search-bar__input-wrapper">
           <svg class="search-bar__icon pwdev-search-bar__icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <circle cx="11" cy="11" r="8"/>
@@ -318,7 +347,7 @@ $view_as_links = $listings->get_view_as_link_list();
               $is_reg_checked = in_array( $reg_label, $current_regulations );
             ?>
             <label class="filter-option pwdev-filter-option"
-                   data-filter-type="regulation"
+                   data-filter-type="custom-checkbox"
                    data-filter-value="<?php echo esc_attr( $reg_label ); ?>">
               <span class="filter-option__checkbox pwdev-filter-option__checkbox<?php echo $is_reg_checked ? ' checked' : ''; ?>"></span>
               <span class="filter-option__label pwdev-filter-option__label"><?php echo esc_html( $reg_label ); ?></span>
@@ -343,7 +372,7 @@ $view_as_links = $listings->get_view_as_link_list();
               $is_tp_checked = in_array( $tp_label, $current_platforms );
             ?>
             <label class="filter-option pwdev-filter-option"
-                   data-filter-type="trading_platforms"
+                   data-filter-type="custom-checkbox-2"
                    data-filter-value="<?php echo esc_attr( $tp_label ); ?>">
               <span class="filter-option__checkbox pwdev-filter-option__checkbox<?php echo $is_tp_checked ? ' checked' : ''; ?>"></span>
               <span class="filter-option__label pwdev-filter-option__label"><?php echo esc_html( $tp_label ); ?></span>
@@ -404,7 +433,7 @@ $view_as_links = $listings->get_view_as_link_list();
               $is_sf_checked = in_array( $sf_label, $current_spreads );
             ?>
             <label class="filter-option pwdev-filter-option"
-                   data-filter-type="spreads_from"
+                   data-filter-type="custom-checkbox-6"
                    data-filter-value="<?php echo esc_attr( $sf_label ); ?>">
               <span class="filter-option__checkbox pwdev-filter-option__checkbox<?php echo $is_sf_checked ? ' checked' : ''; ?>"></span>
               <span class="filter-option__label pwdev-filter-option__label"><?php echo esc_html( $sf_label ); ?></span>
@@ -432,7 +461,7 @@ $view_as_links = $listings->get_view_as_link_list();
               $is_at_checked = in_array( $at_label, $current_account_types );
             ?>
             <label class="filter-option pwdev-filter-option"
-                   data-filter-type="account_type"
+                   data-filter-type="custom-checkbox-5"
                    data-filter-value="<?php echo esc_attr( $at_label ); ?>">
               <span class="filter-option__checkbox pwdev-filter-option__checkbox<?php echo $is_at_checked ? ' checked' : ''; ?>"></span>
               <span class="filter-option__label pwdev-filter-option__label"><?php echo esc_html( $at_label ); ?></span>
@@ -632,8 +661,21 @@ $view_as_links = $listings->get_view_as_link_list();
                 };
 
                 // Custom fields based on listing form mapping.
-                $min_deposit = $get_first_valid_meta( array( '_min_deposit', '_custom-number-3', '_custom-number', '_custom-text-7' ) );
-                $spreads     = $get_first_valid_meta( array( '_spreads_from', '_custom-text-5', '_custom-text-6' ) );
+                $min_deposit = $get_first_valid_meta( array( '_custom-number-3', '_min_deposit', '_custom-number', '_custom-text-7' ) );
+                $spreads     = '';
+                $spreads_raw = maybe_unserialize( get_post_meta( $id, '_custom-checkbox-6', true ) );
+                if ( is_array( $spreads_raw ) ) {
+                  foreach ( $spreads_raw as $spread_item ) {
+                    $spread_item = trim( wp_strip_all_tags( (string) $spread_item ) );
+                    if ( $spread_item !== '' && ! in_array( strtolower( $spread_item ), $placeholder_values, true ) ) {
+                      $spreads = $spread_item;
+                      break;
+                    }
+                  }
+                }
+                if ( $spreads === '' ) {
+                  $spreads = $get_first_valid_meta( array( '_spreads_from', '_custom-text-5' ) );
+                }
 
                 // Normalize numeric values for cleaner card display while preserving dynamic data.
                 $min_deposit_num = str_replace( array( '$', ',', ' ' ), '', $min_deposit );
@@ -811,7 +853,7 @@ $view_as_links = $listings->get_view_as_link_list();
             <?php endif; ?>
             <?php if ( $spreads ) : ?>
             <div class="card__detail pwdev-card__detail">
-              <span class="card__detail-label pwdev-card__detail-label">Spreads</span>
+              <span class="card__detail-label pwdev-card__detail-label">Spreads From</span>
               <span class="card__detail-value pwdev-card__detail-value"><?php echo esc_html( $spreads ); ?></span>
             </div>
             <?php endif; ?>
@@ -914,7 +956,7 @@ $view_as_links = $listings->get_view_as_link_list();
               $is_modal_reg = in_array( $reg_label, $current_regulations );
             ?>
             <label class="filter-option pwdev-filter-option"
-                   data-filter-type="regulation"
+                   data-filter-type="custom-checkbox"
                    data-filter-value="<?php echo esc_attr( $reg_label ); ?>">
               <span class="filter-option__checkbox pwdev-filter-option__checkbox<?php echo $is_modal_reg ? ' checked' : ''; ?>"></span>
               <span class="filter-option__label pwdev-filter-option__label"><?php echo esc_html( $reg_label ); ?></span>
@@ -936,7 +978,7 @@ $view_as_links = $listings->get_view_as_link_list();
               $is_modal_tp = in_array( $tp_label, $current_platforms );
             ?>
             <label class="filter-option pwdev-filter-option"
-                   data-filter-type="trading_platforms"
+                   data-filter-type="custom-checkbox-2"
                    data-filter-value="<?php echo esc_attr( $tp_label ); ?>">
               <span class="filter-option__checkbox pwdev-filter-option__checkbox<?php echo $is_modal_tp ? ' checked' : ''; ?>"></span>
               <span class="filter-option__label pwdev-filter-option__label"><?php echo esc_html( $tp_label ); ?></span>
@@ -959,7 +1001,7 @@ $view_as_links = $listings->get_view_as_link_list();
               $is_modal_at = in_array( $mat_label, $current_account_types );
             ?>
             <label class="filter-option pwdev-filter-option"
-                   data-filter-type="account_type"
+                   data-filter-type="custom-checkbox-5"
                    data-filter-value="<?php echo esc_attr( $mat_label ); ?>">
               <span class="filter-option__checkbox pwdev-filter-option__checkbox<?php echo $is_modal_at ? ' checked' : ''; ?>"></span>
               <span class="filter-option__label pwdev-filter-option__label"><?php echo esc_html( $mat_label ); ?></span>

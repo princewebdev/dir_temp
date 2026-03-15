@@ -129,12 +129,13 @@ if ( have_posts() ) :
 		};
 
 		$year_founded        = $get_first_valid_meta( array( '_year_founded', '_custom-number' ) );
-		$min_deposit         = $get_first_valid_meta( array( '_min_deposit', '_custom-number-3' ) );
+		$min_deposit         = $get_first_valid_meta( array( '_custom-number-3', '_min_deposit' ) );
 		$execution_type      = $get_first_valid_meta( array( '_execution_type', '_custom-select-3' ) );
 		$headquarters        = $get_first_valid_meta( array( '_headquarters', '_custom-text' ) );
 		$max_leverage        = $get_first_valid_meta( array( '_max_leverage', '_custom-text-3' ) );
 		$publicly_listed     = $get_first_valid_meta( array( '_publicly_listed', '_custom-select-2' ) );
-		$spreads_from        = $get_first_valid_meta( array( '_spreads_from', '_custom-text-5' ) );
+		$spreads_from_items  = $get_list_meta( array( '_custom-checkbox-6', '_spreads_from', '_custom-text-5' ) );
+		$spreads_from        = ! empty( $spreads_from_items ) ? $spreads_from_items[0] : '';
 		$asset_classes_items = $get_list_meta( array( '_asset_classes', '_custom-checkbox-3' ) );
 		$regulation_items    = $get_list_meta( array( '_regulation', '_custom-checkbox' ) );
 		$platform_items      = $get_list_meta( array( '_trading_platforms', '_custom-checkbox-2' ) );

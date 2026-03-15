@@ -121,6 +121,14 @@ add_filter( 'body_class', 'trc_directorist_body_classes' );
  * @return array
  */
 function trc_apply_custom_meta_filters( $args ) {
+    if ( ! empty( $_GET['q'] ) ) {
+        $keyword = sanitize_text_field( wp_unslash( $_GET['q'] ) );
+        if ( $keyword !== '' ) {
+            // Directorist uses q in form fields; map to WP's native search arg for listing queries.
+            $args['s'] = $keyword;
+        }
+    }
+
     if ( empty( $_GET['custom_field'] ) || ! is_array( $_GET['custom_field'] ) ) {
         return $args;
     }
@@ -135,6 +143,19 @@ function trc_apply_custom_meta_filters( $args ) {
             continue;
         }
 
+        $target_meta_keys = array( '_' . $key );
+        if ( 'regulation' === $key ) {
+            $target_meta_keys = array( '_custom-checkbox', '_regulation' );
+        } elseif ( 'trading_platforms' === $key ) {
+            $target_meta_keys = array( '_custom-checkbox-2', '_trading_platforms' );
+        } elseif ( 'account_type' === $key ) {
+            $target_meta_keys = array( '_custom-checkbox-5', '_account_type' );
+        } elseif ( 'spreads_from' === $key ) {
+            $target_meta_keys = array( '_custom-checkbox-6', '_spreads_from', '_custom-text-5' );
+        } elseif ( 'min_deposit' === $key ) {
+            $target_meta_keys = array( '_custom-number-3', '_min_deposit' );
+        }
+
         $meta_query = array();
 
         if ( is_array( $values ) ) {
@@ -145,19 +166,34 @@ function trc_apply_custom_meta_filters( $args ) {
             if ( count( $values ) > 1 ) {
                 $sub = array( 'relation' => 'OR' );
                 foreach ( $values as $value ) {
-                    $sub[] = array(
-                        'key'     => '_' . $key,
-                        'value'   => $value,
-                        'compare' => 'LIKE',
-                    );
+                    foreach ( $target_meta_keys as $target_meta_key ) {
+                        $sub[] = array(
+                            'key'     => $target_meta_key,
+                            'value'   => $value,
+                            'compare' => 'LIKE',
+                        );
+                    }
                 }
                 $meta_query = $sub;
             } else {
-                $meta_query = array(
-                    'key'     => '_' . $key,
-                    'value'   => reset( $values ),
-                    'compare' => 'LIKE',
-                );
+                $single_value = reset( $values );
+                if ( count( $target_meta_keys ) > 1 ) {
+                    $sub = array( 'relation' => 'OR' );
+                    foreach ( $target_meta_keys as $target_meta_key ) {
+                        $sub[] = array(
+                            'key'     => $target_meta_key,
+                            'value'   => $single_value,
+                            'compare' => 'LIKE',
+                        );
+                    }
+                    $meta_query = $sub;
+                } else {
+                    $meta_query = array(
+                        'key'     => $target_meta_keys[0],
+                        'value'   => $single_value,
+                        'compare' => 'LIKE',
+                    );
+                }
             }
         } else {
             $value = sanitize_text_field( $values );
@@ -168,20 +204,45 @@ function trc_apply_custom_meta_filters( $args ) {
             if ( substr_count( $value, '-' ) === 1 ) {
                 $parts = explode( '-', $value, 2 );
                 if ( is_numeric( $parts[0] ) && is_numeric( $parts[1] ) ) {
-                    $meta_query = array(
-                        'key'     => '_' . $key,
-                        'value'   => array( (int) $parts[0], (int) $parts[1] ),
-                        'type'    => 'NUMERIC',
-                        'compare' => 'BETWEEN',
-                    );
+                    if ( count( $target_meta_keys ) > 1 ) {
+                        $sub = array( 'relation' => 'OR' );
+                        foreach ( $target_meta_keys as $target_meta_key ) {
+                            $sub[] = array(
+                                'key'     => $target_meta_key,
+                                'value'   => array( (int) $parts[0], (int) $parts[1] ),
+                                'type'    => 'NUMERIC',
+                                'compare' => 'BETWEEN',
+                            );
+                        }
+                        $meta_query = $sub;
+                    } else {
+                        $meta_query = array(
+                            'key'     => $target_meta_keys[0],
+                            'value'   => array( (int) $parts[0], (int) $parts[1] ),
+                            'type'    => 'NUMERIC',
+                            'compare' => 'BETWEEN',
+                        );
+                    }
                 }
             }
             if ( empty( $meta_query ) ) {
-                $meta_query = array(
-                    'key'     => '_' . $key,
-                    'value'   => $value,
-                    'compare' => 'LIKE',
-                );
+                if ( count( $target_meta_keys ) > 1 ) {
+                    $sub = array( 'relation' => 'OR' );
+                    foreach ( $target_meta_keys as $target_meta_key ) {
+                        $sub[] = array(
+                            'key'     => $target_meta_key,
+                            'value'   => $value,
+                            'compare' => 'LIKE',
+                        );
+                    }
+                    $meta_query = $sub;
+                } else {
+                    $meta_query = array(
+                        'key'     => $target_meta_keys[0],
+                        'value'   => $value,
+                        'compare' => 'LIKE',
+                    );
+                }
             }
         }
 

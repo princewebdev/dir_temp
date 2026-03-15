@@ -205,7 +205,7 @@ function initApplyFilters() {
       });
 
       // Append as custom_field[key][]
-      ['regulation', 'trading_platforms', 'spreads_from', 'account_type'].forEach(type => {
+      ['custom-checkbox', 'custom-checkbox-2', 'custom-checkbox-6', 'custom-checkbox-5', 'regulation', 'trading_platforms', 'spreads_from', 'account_type'].forEach(type => {
         (filtersByType[type] || []).forEach(v => url.searchParams.append('custom_field[' + type + '][]', v));
       });
 
