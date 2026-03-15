@@ -394,6 +394,26 @@ function initProfilePageInteractions() {
       }
     });
   });
+
+  // Share dropdown — click to open/close, click outside to dismiss
+  $$('.pwdev-directorist-actions-wrap .directorist-social-share').forEach(toggle => {
+    toggle.addEventListener('click', e => {
+      e.stopPropagation();
+      const isOpen = toggle.classList.contains('pwdev-share-open');
+      $$('.directorist-social-share.pwdev-share-open').forEach(el => el.classList.remove('pwdev-share-open'));
+      if (!isOpen) {
+        toggle.classList.add('pwdev-share-open');
+      }
+    });
+    // Keep dropdown open when clicking links inside it
+    const links = toggle.querySelector('.directorist-social-share-links');
+    if (links) {
+      links.addEventListener('click', e => e.stopPropagation());
+    }
+  });
+  document.addEventListener('click', () => {
+    $$('.directorist-social-share.pwdev-share-open').forEach(el => el.classList.remove('pwdev-share-open'));
+  });
 }
 
 // ============================================

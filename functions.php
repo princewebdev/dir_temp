@@ -37,13 +37,24 @@ function trc_is_directorist_page() {
         }
     }
 
-    $request_uri = isset( $_SERVER['REQUEST_URI'] ) ? wp_unslash( $_SERVER['REQUEST_URI'] ) : '';
-    if ( $request_uri && (
-        false !== strpos( $request_uri, '/directory/' ) ||
-        false !== strpos( $request_uri, '/directorist/' ) ||
-        false !== strpos( $request_uri, '/all-listings-3/' )
-    ) ) {
-        return true;
+    $request_uri = isset($_SERVER['REQUEST_URI']) ? wp_unslash($_SERVER['REQUEST_URI']) : '';
+
+    $paths = [
+        '/directory',
+        '/directorist',
+        '/all-listings',
+        '/single-category',
+        '/single-location',
+        '/single-tag',
+        'directory_type'
+    ];
+
+    if ($request_uri) {
+        foreach ($paths as $path) {
+            if (strpos($request_uri, $path) !== false) {
+                return true;
+            }
+        }
     }
 
     return false;
@@ -107,6 +118,10 @@ add_action( 'wp_enqueue_scripts', 'trc_enqueue_directorist_child_assets', 999 );
 function trc_directorist_body_classes( $classes ) {
     if ( trc_is_directorist_page() ) {
         $classes[] = 'pwdev-page-profile';
+
+        if ( ! is_singular( 'at_biz_dir' ) ) {
+            $classes[] = 'pwdev-page-search-results';
+        }
     }
 
     return $classes;
@@ -129,13 +144,43 @@ function trc_apply_custom_meta_filters( $args ) {
         }
     }
 
+    $added_queries = array();
+
+    if ( ! empty( $_GET['verified_only'] ) ) {
+        $added_queries[] = array(
+            'relation' => 'AND',
+            array(
+                'key'     => '_claimed_by_admin',
+                'compare' => 'EXISTS',
+            ),
+            array(
+                'key'     => '_claimed_by_admin',
+                'value'   => array( '', '0', 'false', 'no' ),
+                'compare' => 'NOT IN',
+            ),
+        );
+    }
+
     if ( empty( $_GET['custom_field'] ) || ! is_array( $_GET['custom_field'] ) ) {
+        if ( ! empty( $added_queries ) ) {
+            $existing = isset( $args['meta_query'] ) ? (array) $args['meta_query'] : array( 'relation' => 'AND' );
+
+            if ( empty( $existing['relation'] ) ) {
+                $existing['relation'] = 'AND';
+            }
+
+            foreach ( $added_queries as $query ) {
+                $existing[] = $query;
+            }
+
+            $args['meta_query'] = $existing;
+        }
+
         return $args;
     }
 
     // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
     $custom_fields = array_filter( wp_unslash( $_GET['custom_field'] ) );
-    $added_queries = array();
 
     foreach ( $custom_fields as $key => $values ) {
         $key = sanitize_key( $key );
@@ -200,8 +245,39 @@ function trc_apply_custom_meta_filters( $args ) {
             if ( empty( $value ) ) {
                 continue;
             }
+
+            if ( 'min_deposit' === $key && substr_count( $value, '-' ) === 1 ) {
+                $parts = explode( '-', $value, 2 );
+
+                if ( is_numeric( $parts[0] ) && is_numeric( $parts[1] ) ) {
+                    $meta_query = array(
+                        'relation' => 'OR',
+                        array(
+                            'key'     => '_custom-number-3',
+                            'value'   => array( (int) $parts[0], (int) $parts[1] ),
+                            'type'    => 'NUMERIC',
+                            'compare' => 'BETWEEN',
+                        ),
+                        array(
+                            'relation' => 'AND',
+                            array(
+                                'key'     => '_min_deposit',
+                                'value'   => '^[0-9]+(\\.[0-9]+)?$',
+                                'compare' => 'REGEXP',
+                            ),
+                            array(
+                                'key'     => '_min_deposit',
+                                'value'   => array( (int) $parts[0], (int) $parts[1] ),
+                                'type'    => 'NUMERIC',
+                                'compare' => 'BETWEEN',
+                            ),
+                        ),
+                    );
+                }
+            }
+
             // Range format "min-max" for numeric fields like min_deposit
-            if ( substr_count( $value, '-' ) === 1 ) {
+            if ( empty( $meta_query ) && substr_count( $value, '-' ) === 1 ) {
                 $parts = explode( '-', $value, 2 );
                 if ( is_numeric( $parts[0] ) && is_numeric( $parts[1] ) ) {
                     if ( count( $target_meta_keys ) > 1 ) {
@@ -253,6 +329,11 @@ function trc_apply_custom_meta_filters( $args ) {
 
     if ( ! empty( $added_queries ) ) {
         $existing = isset( $args['meta_query'] ) ? (array) $args['meta_query'] : array( 'relation' => 'AND' );
+
+        if ( empty( $existing['relation'] ) ) {
+            $existing['relation'] = 'AND';
+        }
+
         foreach ( $added_queries as $q ) {
             $existing[] = $q;
         }

@@ -118,12 +118,13 @@ foreach ( $meta_listings as $ml_id ) {
   if ( $md === '' ) {
     $md = get_post_meta( $ml_id, '_min_deposit', true );
   }
-	if ( $md !== '' ) {
-		$md_num = (float) preg_replace( '/[^0-9.]/', '', (string) $md );
-		if ( $md_num >= 0 ) {
-			$min_deposit_values[] = $md_num;
-		}
-	}
+
+  if ( $md !== '' ) {
+    $md_clean = preg_replace( '/[^0-9.]/', '', (string) $md );
+    if ( $md_clean !== '' && is_numeric( $md_clean ) ) {
+      $min_deposit_values[] = (float) $md_clean;
+    }
+  }
   foreach ( $extract_meta_values( get_post_meta( $ml_id, '_custom-checkbox-5', true ) ) as $a ) {
     $account_type_values[ $a ] = isset( $account_type_values[ $a ] ) ? $account_type_values[ $a ] + 1 : 1;
 	}
@@ -661,7 +662,7 @@ $view_as_links = $listings->get_view_as_link_list();
                 };
 
                 // Custom fields based on listing form mapping.
-                $min_deposit = $get_first_valid_meta( array( '_custom-number-3', '_min_deposit', '_custom-number', '_custom-text-7' ) );
+                $min_deposit = $get_first_valid_meta( array( '_custom-number-3', '_min_deposit' ) );
                 $spreads     = '';
                 $spreads_raw = maybe_unserialize( get_post_meta( $id, '_custom-checkbox-6', true ) );
                 if ( is_array( $spreads_raw ) ) {
